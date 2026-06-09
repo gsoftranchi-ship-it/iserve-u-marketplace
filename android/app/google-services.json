@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "210024593514",
+    "project_id": "aarthik-udaan-clean",
+    "storage_bucket": "aarthik-udaan-clean.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:210024593514:android:51eb5384e8af7ffbb2b213",
+        "android_client_info": {
+          "package_name": "com.iserveu.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBmeYAOtNX6Lws04_WA99HMK9Vg0pCNij0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
