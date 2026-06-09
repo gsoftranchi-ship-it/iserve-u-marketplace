@@ -23,6 +23,8 @@ class FoodPage extends StatefulWidget {
 class _FoodPageState extends State<FoodPage>
     with SingleTickerProviderStateMixin {
   String foodFilter = 'All';
+  String selectedRestaurant =
+      'All Restaurants';
 
   final OrderService
   _orderService =
@@ -230,6 +232,86 @@ class _FoodPageState extends State<FoodPage>
 
         body: Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('food_menu')
+                    .where(
+                  'available',
+                  isEqualTo: true,
+                )
+                    .where(
+                  'restaurantActive',
+                  isEqualTo: true,
+                )
+                    .snapshots(),
+                builder: (context, snapshot) {
+
+                  final restaurants = <String>{
+                    'All Restaurants'
+                  };
+
+                  if (snapshot.hasData) {
+                    for (final doc in snapshot.data!.docs) {
+                      final data =
+                      doc.data() as Map<String, dynamic>;
+
+                      final restaurantName =
+                      data['restaurantName'];
+
+                      if (restaurantName != null &&
+                          restaurantName
+                              .toString()
+                              .trim()
+                              .isNotEmpty) {
+                        restaurants.add(
+                          restaurantName,
+                        );
+                      }
+                    }
+                  }
+
+                  return DropdownButtonFormField<String>(
+
+                    initialValue: selectedRestaurant,
+
+                    decoration: InputDecoration(
+
+                      labelText: 'Restaurant',
+
+                      border: OutlineInputBorder(
+                        borderRadius:
+                        BorderRadius.circular(12),
+                      ),
+                    ),
+
+                    items: restaurants
+                        .map(
+                          (restaurant) =>
+                          DropdownMenuItem(
+                            value: restaurant,
+                            child: Text(
+                              restaurant,
+                            ),
+                          ),
+                    )
+                        .toList(),
+
+                    onChanged: (value) {
+                      setState(() {
+                        selectedRestaurant =
+                            value ??
+                                'All Restaurants';
+                      });
+                    },
+                  );
+                },
+              ),
+            ),
 
             Padding(
               padding: const EdgeInsets.symmetric(
@@ -401,9 +483,19 @@ class _FoodPageState extends State<FoodPage>
           final matchesFoodType =
               foodFilter == 'All' ||
                   foodType == foodFilter;
+          final restaurantName =
+          (data['restaurantName'] ?? '')
+              .toString();
+
+          final matchesRestaurant =
+              selectedRestaurant ==
+                  'All Restaurants' ||
+                  restaurantName ==
+                      selectedRestaurant;
 
           return matchesSearch &&
-              matchesFoodType;
+              matchesFoodType &&
+              matchesRestaurant;
 
         }).toList();
 

@@ -6,7 +6,6 @@ import '../food_dining/food_page.dart';
 import '../admin/orders_page.dart';
 import '../profile/profile_page.dart';
 import '../marketplace/site_manager_page.dart';
-import '../food_dining/menu_manager_page.dart';
 import '../admin/signage_admin_dashboard.dart';
 import '../../core/widgets/update_checker.dart';
 import 'package:flutter/scheduler.dart';
@@ -15,6 +14,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../features/support/pages/support_page.dart';
 import '../../features/notifications/services/notifications_page.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:iserve_u/features/support/admin/admin_tickets_page.dart';
+
 class HomePage extends StatefulWidget {
   final String userRole;
 
@@ -919,16 +920,16 @@ class _HomePageState extends State<HomePage> {
 
             if (isAdmin)
               _serviceCard(
-                "Menu Manager",
-                Icons.edit_note,
-                Colors.brown,
-                "Update Prices",
+                "Support Tickets",
+                Icons.support_agent,
+                Colors.teal,
+                "Customer Support Desk",
                     () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) =>
-                      const MenuManagerPage(),
+                      const AdminTicketsPage(),
                     ),
                   );
                 },

@@ -195,6 +195,7 @@ class AdminDashboard extends StatelessWidget {
                 todayRevenue,
                 todayCommission,
               ),
+
               _buildDeliveryRequests(),
 
               const Padding(
