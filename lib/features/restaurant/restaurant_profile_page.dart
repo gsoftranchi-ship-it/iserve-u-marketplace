@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 class RestaurantProfilePage extends StatefulWidget {
   const RestaurantProfilePage({super.key});
@@ -48,6 +49,8 @@ class _RestaurantProfilePageState
 
   String ownerName = '';
   String email = '';
+  double? latitude;
+  double? longitude;
 
   @override
   void initState() {
@@ -112,6 +115,61 @@ class _RestaurantProfilePageState
       loading = false;
     });
   }
+  Future<void> _captureLocation() async {
+
+    final permission =
+    await Geolocator.requestPermission();
+
+    if (permission ==
+        LocationPermission.denied ||
+        permission ==
+            LocationPermission.deniedForever) {
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+
+        const SnackBar(
+          content: Text(
+            'Location permission denied',
+          ),
+        ),
+      );
+
+      return;
+    }
+
+    final position =
+    await Geolocator.getCurrentPosition(
+      locationSettings:
+      const LocationSettings(
+        accuracy:
+        LocationAccuracy.high,
+      ),
+    );
+
+    setState(() {
+
+      latitude =
+          position.latitude;
+
+      longitude =
+          position.longitude;
+    });
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+
+      SnackBar(
+        content: Text(
+          'Location Captured\nLat: $latitude\nLng: $longitude',
+        ),
+      ),
+    );
+  }
 
   Future<void> _saveProfile() async {
 
@@ -144,6 +202,10 @@ class _RestaurantProfilePageState
       'bannerUrl': bannerController.text.trim(),
 
       'active': active,
+
+      'latitude': latitude,
+
+      'longitude': longitude,
     });
     final menuItems =
     await FirebaseFirestore.instance
@@ -303,6 +365,26 @@ class _RestaurantProfilePageState
                     active = value;
                   });
                 },
+              ),
+              const SizedBox(height: 10),
+
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+
+                  icon: const Icon(
+                    Icons.my_location,
+                  ),
+
+                  label: Text(
+                    latitude == null
+                        ? 'CAPTURE RESTAURANT LOCATION'
+                        : 'LOCATION CAPTURED',
+                  ),
+
+                  onPressed:
+                  _captureLocation,
+                ),
               ),
 
               const SizedBox(height: 20),

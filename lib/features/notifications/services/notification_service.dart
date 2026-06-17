@@ -17,7 +17,6 @@ class NotificationService {
 
     required String type,
   }) async {
-
     final notification =
     AppNotification(
 
@@ -41,5 +40,6 @@ class NotificationService {
         .add(
       notification.toMap(),
     );
+
   }
 }

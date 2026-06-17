@@ -38,7 +38,6 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController _pincodeController =
   TextEditingController();
 
-  bool _isEditing = false;
   bool _isLoading = false;
 
   XFile? _selectedImage;
@@ -228,8 +227,6 @@ class _ProfilePageState extends State<ProfilePage> {
         _profileImageUrl =
             imageUrl;
 
-        _isEditing = false;
-
         _isLoading = false;
       });
 
@@ -295,29 +292,7 @@ class _ProfilePageState extends State<ProfilePage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-
-        actions: [
-
-          IconButton(
-
-            icon: Icon(
-
-              _isEditing
-                  ? Icons.close
-                  : Icons.edit,
-            ),
-
-            onPressed: () {
-
-              setState(() {
-
-                _isEditing =
-                !_isEditing;
-              });
-            },
-          ),
-        ],
-      ),
+       ),
 
       body: SingleChildScrollView(
 
@@ -387,59 +362,54 @@ class _ProfilePageState extends State<ProfilePage> {
 
                               : null,
                         ),
+                        Positioned(
 
-                        if (_isEditing)
+                          bottom: 0,
+                          right: 0,
 
-                          Positioned(
+                          child: GestureDetector(
 
-                            bottom: 0,
-                            right: 0,
+                            onTap: _pickImage,
 
-                            child: GestureDetector(
+                            child: Container(
 
-                              onTap: _pickImage,
+                              padding:
+                              const EdgeInsets.all(8),
 
-                              child: Container(
+                              decoration:
+                              const BoxDecoration(
 
-                                padding:
-                                const EdgeInsets.all(8),
+                                color: Colors.orange,
 
-                                decoration:
-                                const BoxDecoration(
+                                shape:
+                                BoxShape.circle,
+                              ),
 
-                                  color: Colors.orange,
+                              child: const Icon(
 
-                                  shape:
-                                  BoxShape.circle,
-                                ),
+                                Icons.camera_alt,
 
-                                child: const Icon(
+                                color: Colors.white,
 
-                                  Icons.camera_alt,
-
-                                  color: Colors.white,
-
-                                  size: 18,
-                                ),
+                                size: 18,
                               ),
                             ),
                           ),
+                        ),
                       ],
                     ),
 
                     const SizedBox(height: 10),
 
-                    if (_isEditing)
+                    const Text(
 
-                      const Text(
+                      "Tap camera icon to change photo",
 
-                        "Tap camera icon to change photo",
-
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
                       ),
+                    ),
                   ],
                 ),
               ),
@@ -504,8 +474,6 @@ class _ProfilePageState extends State<ProfilePage> {
               // =========================================================
               // SAVE BUTTON
               // =========================================================
-
-              if (_isEditing)
 
                 SizedBox(
 
@@ -668,7 +636,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
         controller: controller,
 
-        enabled: _isEditing,
+        enabled: true,
 
         maxLines: maxLines,
 
@@ -685,11 +653,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
           filled: true,
 
-          fillColor:
-
-          _isEditing
-              ? Colors.white
-              : Colors.transparent,
+          fillColor: Colors.white,
 
           border: OutlineInputBorder(
 

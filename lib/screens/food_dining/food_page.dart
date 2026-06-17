@@ -9,6 +9,7 @@ import '../../features/food/sheets/cart_bottom_sheet.dart';
 import '../../features/food/services/order_service.dart';
 import '../../features/profile/guards/profile_guard.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:geolocator/geolocator.dart';
 
 
 class FoodPage extends StatefulWidget {
@@ -28,10 +29,12 @@ class _FoodPageState extends State<FoodPage>
 
   final OrderService
   _orderService =
-   OrderService();
+  OrderService();
   bool _isOrderLoading = false;
   bool useDefaultAddress = true;
   String searchQuery = '';
+  double? customerLatitude;
+  double? customerLongitude;
 
   late TabController _tabController;
 
@@ -55,6 +58,15 @@ class _FoodPageState extends State<FoodPage>
   Future<void> _loadDefaultAddress() async {
 
     try {
+      Position position =
+      await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+
+      customerLatitude = position.latitude;
+      customerLongitude = position.longitude;
 
       final user =
           FirebaseAuth.instance.currentUser;
@@ -230,149 +242,149 @@ class _FoodPageState extends State<FoodPage>
         ),
       ),
 
-        body: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
-              ),
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('food_menu')
-                    .where(
-                  'available',
-                  isEqualTo: true,
-                )
-                    .where(
-                  'restaurantActive',
-                  isEqualTo: true,
-                )
-                    .snapshots(),
-                builder: (context, snapshot) {
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 8,
+            ),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('food_menu')
+                  .where(
+                'available',
+                isEqualTo: true,
+              )
+                  .where(
+                'restaurantActive',
+                isEqualTo: true,
+              )
+                  .snapshots(),
+              builder: (context, snapshot) {
 
-                  final restaurants = <String>{
-                    'All Restaurants'
-                  };
+                final restaurants = <String>{
+                  'All Restaurants'
+                };
 
-                  if (snapshot.hasData) {
-                    for (final doc in snapshot.data!.docs) {
-                      final data =
-                      doc.data() as Map<String, dynamic>;
+                if (snapshot.hasData) {
+                  for (final doc in snapshot.data!.docs) {
+                    final data =
+                    doc.data() as Map<String, dynamic>;
 
-                      final restaurantName =
-                      data['restaurantName'];
+                    final restaurantName =
+                    data['restaurantName'];
 
-                      if (restaurantName != null &&
-                          restaurantName
-                              .toString()
-                              .trim()
-                              .isNotEmpty) {
-                        restaurants.add(
-                          restaurantName,
-                        );
-                      }
+                    if (restaurantName != null &&
+                        restaurantName
+                            .toString()
+                            .trim()
+                            .isNotEmpty) {
+                      restaurants.add(
+                        restaurantName,
+                      );
                     }
                   }
+                }
 
-                  return DropdownButtonFormField<String>(
+                return DropdownButtonFormField<String>(
 
-                    initialValue: selectedRestaurant,
+                  initialValue: selectedRestaurant,
 
-                    decoration: InputDecoration(
+                  decoration: InputDecoration(
 
-                      labelText: 'Restaurant',
+                    labelText: 'Restaurant',
 
-                      border: OutlineInputBorder(
-                        borderRadius:
-                        BorderRadius.circular(12),
-                      ),
+                    border: OutlineInputBorder(
+                      borderRadius:
+                      BorderRadius.circular(12),
                     ),
+                  ),
 
-                    items: restaurants
-                        .map(
-                          (restaurant) =>
-                          DropdownMenuItem(
-                            value: restaurant,
-                            child: Text(
-                              restaurant,
-                            ),
+                  items: restaurants
+                      .map(
+                        (restaurant) =>
+                        DropdownMenuItem(
+                          value: restaurant,
+                          child: Text(
+                            restaurant,
                           ),
-                    )
-                        .toList(),
+                        ),
+                  )
+                      .toList(),
 
-                    onChanged: (value) {
+                  onChanged: (value) {
+                    setState(() {
+                      selectedRestaurant =
+                          value ??
+                              'All Restaurants';
+                    });
+                  },
+                );
+              },
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 8,
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+
+                  ChoiceChip(
+                    label: const Text('All'),
+                    selected: foodFilter == 'All',
+                    onSelected: (_) {
                       setState(() {
-                        selectedRestaurant =
-                            value ??
-                                'All Restaurants';
+                        foodFilter = 'All';
                       });
                     },
-                  );
-                },
-              ),
-            ),
+                  ),
 
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
-              ),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
+                  const SizedBox(width: 8),
 
-                    ChoiceChip(
-                      label: const Text('All'),
-                      selected: foodFilter == 'All',
-                      onSelected: (_) {
-                        setState(() {
-                          foodFilter = 'All';
-                        });
-                      },
-                    ),
+                  ChoiceChip(
+                    label: const Text('Veg'),
+                    selected: foodFilter == 'Veg',
+                    onSelected: (_) {
+                      setState(() {
+                        foodFilter = 'Veg';
+                      });
+                    },
+                  ),
 
-                    const SizedBox(width: 8),
+                  const SizedBox(width: 8),
 
-                    ChoiceChip(
-                      label: const Text('Veg'),
-                      selected: foodFilter == 'Veg',
-                      onSelected: (_) {
-                        setState(() {
-                          foodFilter = 'Veg';
-                        });
-                      },
-                    ),
-
-                    const SizedBox(width: 8),
-
-                    ChoiceChip(
-                      label: const Text('Non Veg'),
-                      selected: foodFilter == 'Non Veg',
-                      onSelected: (_) {
-                        setState(() {
-                          foodFilter = 'Non Veg';
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildMenuGrid("Regular"),
-                  _buildMenuGrid("Weekly Tiffin"),
-                  _buildMenuGrid("Monthly Tiffin"),
+                  ChoiceChip(
+                    label: const Text('Non Veg'),
+                    selected: foodFilter == 'Non Veg',
+                    onSelected: (_) {
+                      setState(() {
+                        foodFilter = 'Non Veg';
+                      });
+                    },
+                  ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildMenuGrid("Regular"),
+                _buildMenuGrid("Weekly Tiffin"),
+                _buildMenuGrid("Monthly Tiffin"),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -643,344 +655,344 @@ class _FoodPageState extends State<FoodPage>
         return Consumer<FoodService>(
 
 
-      builder: (context, cart, child) {
+          builder: (context, cart, child) {
 
-        final cartItem =
-        cart.items[id];
+            final cartItem =
+            cart.items[id];
 
-        final bool isInCart =
-            cartItem != null;
+            final bool isInCart =
+                cartItem != null;
 
-        return Card(
+            return Card(
 
-          elevation: 3,
+              elevation: 3,
 
-          clipBehavior: Clip.antiAlias,
+              clipBehavior: Clip.antiAlias,
 
-          shape: RoundedRectangleBorder(
-            borderRadius:
-            BorderRadius.circular(12),
-          ),
-
-          child: Column(
-
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-
-            children: [
-
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
-                ),
-                child: Stack(
-                  children: [
-
-                    SizedBox(
-                      height: 160,
-                      width: double.infinity,
-                      child: Image(
-                        image: imageUrl.isNotEmpty
-                            ? NetworkImage(imageUrl)
-                            : const AssetImage(
-                          'assets/images/iserveu_default.png',
-                        ) as ImageProvider,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-
-                    Positioned(
-                      left: 10,
-                      top: 10,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.deepOrange,
-                          borderRadius:
-                          BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          actualDiscount > 0
-                              ? "$actualDiscount% OFF"
-                              : "SPECIAL",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                BorderRadius.circular(12),
               ),
 
-              Padding(
+              child: Column(
 
-                padding:
-                const EdgeInsets.all(8.0),
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
 
-                child: Column(
+                children: [
 
-                  mainAxisSize:
-                  MainAxisSize.min,
-
-                  crossAxisAlignment:
-                  CrossAxisAlignment.start,
-
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      topRight: Radius.circular(12),
                     ),
+                    child: Stack(
+                      children: [
 
-                    const SizedBox(height: 8),
-
-                    Text(
-                      description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.grey[700],
-                        fontSize: 13,
-                      ),
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    Text(
-                      restaurantName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF0A2540),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (offerTitle.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          top: 4,
-                        ),
-                        child: Text(
-                          "🔥 $offerTitle",
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.deepOrange,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                        SizedBox(
+                          height: 160,
+                          width: double.infinity,
+                          child: Image(
+                            image: imageUrl.isNotEmpty
+                                ? NetworkImage(imageUrl)
+                                : const AssetImage(
+                              'assets/images/iserveu_default.png',
+                            ) as ImageProvider,
+                            fit: BoxFit.cover,
                           ),
                         ),
-                      ),
-                    const SizedBox(height: 10),
 
-                    Column(
+                        Positioned(
+                          left: 10,
+                          top: 10,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.deepOrange,
+                              borderRadius:
+                              BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              actualDiscount > 0
+                                  ? "$actualDiscount% OFF"
+                                  : "SPECIAL",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Padding(
+
+                    padding:
+                    const EdgeInsets.all(8.0),
+
+                    child: Column(
+
+                      mainAxisSize:
+                      MainAxisSize.min,
+
                       crossAxisAlignment:
                       CrossAxisAlignment.start,
 
                       children: [
-
-                        if (actualDiscount > 0)
-                          Text(
-                            "₹${menuPrice.toInt()}",
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              decoration:
-                              TextDecoration.lineThrough,
-                            ),
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
+                        ),
+
+                        const SizedBox(height: 8),
 
                         Text(
-                          "₹${finalPrice.toInt()}",
-                          style: const TextStyle(
-                            color: Colors.green,
-                            fontWeight:
-                            FontWeight.bold,
-                            fontSize: 22,
+                          description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 13,
                           ),
                         ),
 
-                        if (actualDiscount > 0)
-                          Text(
-                            "$actualDiscount% OFF",
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontWeight:
-                              FontWeight.bold,
+                        const SizedBox(height: 10),
+
+                        Text(
+                          restaurantName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF0A2540),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (offerTitle.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              top: 4,
+                            ),
+                            child: Text(
+                              "🔥 $offerTitle",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.deepOrange,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
+                        const SizedBox(height: 10),
 
-                    SizedBox(
-
-                      width: double.infinity,
-                      height: 32,
-
-                      child: isInCart
-
-                          ? Container(
-
-                        decoration:
-                        BoxDecoration(
-
-                          color: Colors
-                              .orange
-                              .shade50,
-
-                          borderRadius:
-                          BorderRadius
-                              .circular(
-                              8),
-
-                          border: Border.all(
-                            color:
-                            Colors.orange,
-                            width: 1,
-                          ),
-                        ),
-
-                        child: Row(
-
-                          mainAxisAlignment:
-                          MainAxisAlignment
-                              .spaceEvenly,
+                        Column(
+                          crossAxisAlignment:
+                          CrossAxisAlignment.start,
 
                           children: [
 
-                            IconButton(
-
-                              padding:
-                              EdgeInsets.zero,
-
-                              icon: const Icon(
-                                Icons.remove,
-                                size: 18,
-                                color:
-                                Colors.orange,
+                            if (actualDiscount > 0)
+                              Text(
+                                "₹${menuPrice.toInt()}",
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  decoration:
+                                  TextDecoration.lineThrough,
+                                ),
                               ),
-
-                              onPressed: () =>
-                                  cart.decrementQuantity(
-                                      id),
-                            ),
 
                             Text(
-
-                              "${cartItem.quantity}",
-
-                              style:
-                              const TextStyle(
+                              "₹${finalPrice.toInt()}",
+                              style: const TextStyle(
+                                color: Colors.green,
                                 fontWeight:
-                                FontWeight
-                                    .bold,
-
-                                color: Colors
-                                    .black87,
+                                FontWeight.bold,
+                                fontSize: 22,
                               ),
                             ),
 
-                            IconButton(
+                            if (actualDiscount > 0)
+                              Text(
+                                "$actualDiscount% OFF",
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontWeight:
+                                  FontWeight.bold,
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+
+                        SizedBox(
+
+                          width: double.infinity,
+                          height: 32,
+
+                          child: isInCart
+
+                              ? Container(
+
+                            decoration:
+                            BoxDecoration(
+
+                              color: Colors
+                                  .orange
+                                  .shade50,
+
+                              borderRadius:
+                              BorderRadius
+                                  .circular(
+                                  8),
+
+                              border: Border.all(
+                                color:
+                                Colors.orange,
+                                width: 1,
+                              ),
+                            ),
+
+                            child: Row(
+
+                              mainAxisAlignment:
+                              MainAxisAlignment
+                                  .spaceEvenly,
+
+                              children: [
+
+                                IconButton(
+
+                                  padding:
+                                  EdgeInsets.zero,
+
+                                  icon: const Icon(
+                                    Icons.remove,
+                                    size: 18,
+                                    color:
+                                    Colors.orange,
+                                  ),
+
+                                  onPressed: () =>
+                                      cart.decrementQuantity(
+                                          id),
+                                ),
+
+                                Text(
+
+                                  "${cartItem.quantity}",
+
+                                  style:
+                                  const TextStyle(
+                                    fontWeight:
+                                    FontWeight
+                                        .bold,
+
+                                    color: Colors
+                                        .black87,
+                                  ),
+                                ),
+
+                                IconButton(
+
+                                  padding:
+                                  EdgeInsets.zero,
+
+                                  icon: const Icon(
+                                    Icons.add,
+                                    size: 18,
+                                    color:
+                                    Colors.orange,
+                                  ),
+
+                                  onPressed: () =>
+                                      cart.addToCart(
+                                        id,
+                                        name,
+                                        finalPrice,
+                                        restaurantId,
+                                        restaurantName,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          )
+
+                              : ElevatedButton(
+
+                            onPressed: () {
+                              if (cart.items.isNotEmpty) {
+                                final existingRestaurantId =
+                                    cart.items.values.first.restaurantId;
+
+                                if (existingRestaurantId != restaurantId) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      backgroundColor: Colors.red,
+                                      content: Text(
+                                        'You can order from only one restaurant at a time. Please clear your cart first.',
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+                              }
+
+                              cart.addToCart(
+                                id,
+                                name,
+                                finalPrice,
+                                restaurantId,
+                                restaurantName,
+                              );
+                            },
+
+                            style:
+                            ElevatedButton
+                                .styleFrom(
+
+                              backgroundColor:
+                              const Color(
+                                  0xFF0A2540),
+
+                              shape:
+                              RoundedRectangleBorder(
+                                borderRadius:
+                                BorderRadius
+                                    .circular(
+                                    8),
+                              ),
 
                               padding:
                               EdgeInsets.zero,
-
-                              icon: const Icon(
-                                Icons.add,
-                                size: 18,
-                                color:
-                                Colors.orange,
-                              ),
-
-                              onPressed: () =>
-                                  cart.addToCart(
-                                    id,
-                                    name,
-                                    finalPrice,
-                                    restaurantId,
-                                    restaurantName,
-                                  ),
                             ),
-                          ],
-                        ),
-                      )
 
-                          : ElevatedButton(
+                            child: const Text(
 
-                        onPressed: () {
-                          if (cart.items.isNotEmpty) {
-                            final existingRestaurantId =
-                                cart.items.values.first.restaurantId;
+                              "Add",
 
-                            if (existingRestaurantId != restaurantId) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  backgroundColor: Colors.red,
-                                  content: Text(
-                                    'You can order from only one restaurant at a time. Please clear your cart first.',
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-                          }
-
-                          cart.addToCart(
-                            id,
-                            name,
-                            finalPrice,
-                            restaurantId,
-                            restaurantName,
-                          );
-                        },
-
-                        style:
-                        ElevatedButton
-                            .styleFrom(
-
-                          backgroundColor:
-                          const Color(
-                              0xFF0A2540),
-
-                          shape:
-                          RoundedRectangleBorder(
-                            borderRadius:
-                            BorderRadius
-                                .circular(
-                                8),
-                          ),
-
-                          padding:
-                          EdgeInsets.zero,
-                        ),
-
-                        child: const Text(
-
-                          "Add",
-
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        );
-      },
+            );
+          },
         );
       },
     );
@@ -1299,6 +1311,12 @@ class _FoodPageState extends State<FoodPage>
     try {
 
       await _orderService.placeOrder(
+
+        customerLatitude:
+        customerLatitude,
+
+        customerLongitude:
+        customerLongitude,
 
         items:
         cart.items.values.map((item) {

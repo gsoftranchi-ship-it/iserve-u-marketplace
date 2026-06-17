@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
 import '../models/partner_application_model.dart';
+import '../../notifications/services/notification_service.dart';
+import '../../notifications/constants/notification_types.dart';
 
 class PartnerService {
 
@@ -28,7 +29,7 @@ class PartnerService {
 
     final profileDoc =
     await _firestore
-        .collection('profiles')
+        .collection('users')
         .doc(user.uid)
         .get();
 
@@ -42,6 +43,7 @@ class PartnerService {
     final profile =
         profileDoc.data() ?? {};
     final existingApplication =
+
     await _firestore
         .collection(
         'partner_applications')
@@ -94,10 +96,35 @@ class PartnerService {
     );
 
     await _firestore
-        .collection(
-        'partner_applications')
+        .collection('partner_applications')
         .add(
       application.toMap(),
     );
+
+    final adminDocs =
+    await _firestore
+        .collection('users')
+        .where(
+      'role',
+      isEqualTo: 'admin',
+    )
+        .get();
+
+    for (final admin in adminDocs.docs) {
+
+      await NotificationService()
+          .createNotification(
+
+        userId: admin.id,
+
+        title:
+        'New Partner Application',
+
+        body:
+        '${profile['name'] ?? 'User'} applied for $applicationType',
+
+        type: NotificationTypes.partnerApplication,
+      );
+    }
   }
 }

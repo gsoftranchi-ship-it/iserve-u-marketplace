@@ -40,6 +40,14 @@ class CampaignCard extends StatelessWidget {
     final durationLabel =
         campaign['durationLabel']
             ?? '1 Day';
+    final totalViews =
+        campaign['totalViews'] ?? 0;
+
+    final phoneClicks =
+        campaign['phoneClicks'] ?? 0;
+
+    final whatsappClicks =
+        campaign['whatsappClicks'] ?? 0;
 
 
         campaign['paymentStatus']
@@ -703,6 +711,72 @@ class CampaignCard extends StatelessWidget {
               const SizedBox(
                 height: 22,
               ),
+              // =========================================
+// ANALYTICS
+// =========================================
+
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                ),
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(
+                      18,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                    children: [
+
+                      const Text(
+                        "ADVERTISEMENT ANALYTICS",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      Row(
+                        children: [
+
+                          Expanded(
+                            child: _infoChip(
+                              Icons.visibility,
+                              "$totalViews Views",
+                            ),
+                          ),
+
+                          const SizedBox(width: 8),
+
+                          Expanded(
+                            child: _infoChip(
+                              Icons.phone,
+                              "$phoneClicks Calls",
+                            ),
+                          ),
+
+                          const SizedBox(width: 8),
+
+                          Expanded(
+                            child: _infoChip(
+                              Icons.message,
+                              "$whatsappClicks WhatsApp",
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 22),
 
               // =========================================
               // PAYMENT SECTION

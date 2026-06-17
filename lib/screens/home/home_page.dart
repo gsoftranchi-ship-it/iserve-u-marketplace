@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../players/shared/universal_signage_player.dart';
 import '../marketplace/ads_list_page.dart';
 import '../food_dining/food_page.dart';
 import '../admin/orders_page.dart';
 import '../profile/profile_page.dart';
-import '../marketplace/site_manager_page.dart';
-import '../admin/signage_admin_dashboard.dart';
 import '../../core/widgets/update_checker.dart';
 import 'package:flutter/scheduler.dart';
 import '../../features/restaurant/restaurant_dashboard_page.dart';
@@ -15,6 +12,8 @@ import '../../features/support/pages/support_page.dart';
 import '../../features/notifications/services/notifications_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:iserve_u/features/support/admin/admin_tickets_page.dart';
+import '../admin/partner_approval_page.dart';
+import '../../screens/admin/advertisement_management_page.dart';
 
 class HomePage extends StatefulWidget {
   final String userRole;
@@ -47,9 +46,6 @@ class _HomePageState extends State<HomePage> {
               .snapshots(),
 
           builder: (context, snapshot) {
-
-
-
             if (!snapshot.hasData) {
               return const SizedBox(
                 height: 100,
@@ -107,11 +103,7 @@ class _HomePageState extends State<HomePage> {
 
             return Column(
 
-                mainAxisSize:
-                MainAxisSize.min,
-
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
 
                 children: [
 
@@ -249,9 +241,6 @@ class _HomePageState extends State<HomePage> {
       widget.userRole == 'admin' ||
           widget.userRole == 'super_admin';
   void _changePage(int index) {
-    debugPrint(
-      'ROLE=${widget.userRole} INDEX=$index PAGE_COUNT=${_pages.length}',
-    );
     if (!mounted) return;
 
     setState(() {
@@ -278,11 +267,8 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
 
-    debugPrint(
-      'HOME PAGE ROLE = ${widget.userRole}',
-    );
 
-    final bool isMobile =
+   final bool isMobile =
         MediaQuery.of(context).size.width < 768;
 
     return Scaffold(
@@ -371,7 +357,8 @@ class _HomePageState extends State<HomePage> {
               .collection('users')
               .doc(FirebaseAuth.instance.currentUser!.uid)
               .collection('notifications')
-
+              .orderBy('createdAt', descending: true)
+              .limit(50)
               .snapshots(),
 
           builder: (context, snapshot) {
@@ -539,23 +526,24 @@ class _HomePageState extends State<HomePage> {
         vertical: 24,
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
 
         children: [
 
           _buildHeroBanner(),
-          const SizedBox(height: 20),
+
+          const SizedBox(height: 12),
           const Text(
             "Explore iServe-U Services",
 
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w900,
               color: Color(0xFF0A2540),
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
           _buildServiceGrid(),
         ],
@@ -605,9 +593,10 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    return Container(
-      width: double.infinity,
-      height: 380,
+    return AspectRatio(
+        aspectRatio: 0.72,
+        child: Container(
+          width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
       ),
@@ -727,14 +716,14 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-    );
+     ),
+   );
   }
 
   Widget _buildHeroText() {
 
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
 
       children: [
 
@@ -774,7 +763,7 @@ class _HomePageState extends State<HomePage> {
         const SizedBox(height: 16),
 
         const Text(
-          'Food Delivery • Tiffin Service\nDigital Signage • Marketplace',
+    'Food Delivery • Tiffin Service\nAdvertisements • Marketplace',
           style: TextStyle(
             color: Colors.yellowAccent,
             fontSize: 16,
@@ -805,6 +794,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildServiceGrid() {
 
+
     return LayoutBuilder(
 
       builder: (context, constraints) {
@@ -826,18 +816,36 @@ class _HomePageState extends State<HomePage> {
 
           childAspectRatio:
           MediaQuery.of(context).size.width < 768
-              ? 0.95
-              : 1.4,
+              ? 1.1
+              : 1.2,
 
           children: [
 
-            _serviceCard(
-              "Offers & Promotions",
-              Icons.local_offer,
-              Colors.blue,
-              "Local Deals & Services",
-                  () => _changePage(1),
-            ),
+            if (widget.userRole != 'restaurant_partner' &&
+                widget.userRole != 'delivery_partner')
+              _serviceCard(
+                "Offers & Promotions",
+                Icons.local_offer,
+                Colors.blue,
+                "Local Deals & Services",
+                    () => _changePage(1),
+              ),
+            if (isAdmin)
+              _serviceCard(
+                "Advertisements",
+                Icons.campaign,
+                Colors.deepPurple,
+                "Approve Ads & Payments",
+                    () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                      const AdvertisementManagementPage(),
+                    ),
+                  );
+                },
+              ),
 
             if (widget.userRole != 'restaurant_partner' &&
                 widget.userRole != 'delivery_partner')
@@ -878,48 +886,6 @@ class _HomePageState extends State<HomePage> {
 
             if (isAdmin)
               _serviceCard(
-                "Site Manager",
-                Icons.settings_remote,
-                Colors.purple,
-                "Manage Display Sites",
-                    () {
-
-                  Navigator.push(
-
-                    context,
-
-                    MaterialPageRoute(
-
-                      builder: (_) =>
-                      const SiteManagerPage(),
-                    ),
-                  );
-                },
-              ),
-
-            if (isAdmin)
-              _serviceCard(
-                "Signage Manager",
-                Icons.admin_panel_settings,
-                Colors.indigo,
-                "Approve Campaigns",
-                    () {
-
-                  Navigator.push(
-
-                    context,
-
-                    MaterialPageRoute(
-
-                      builder: (_) =>
-                      const SignageAdminDashboard(),
-                    ),
-                  );
-                },
-              ),
-
-            if (isAdmin)
-              _serviceCard(
                 "Support Tickets",
                 Icons.support_agent,
                 Colors.teal,
@@ -945,40 +911,32 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
 
-            if (isAdmin)
-              _serviceCard(
-                "LED Player",
-                Icons.tv,
-                Colors.red,
-                "Live Signage Engine",
-                    () {
-
-                  Navigator.push(
-
-                    context,
-
-                    MaterialPageRoute(
-
-                      builder: (_) =>
-
-                      const UniversalSignagePlayer(
-
-                        siteId: "Stadium",
-
-                        deviceId: "DEVICE_001",
-                        playlist: [],
-                      ),
-                    ),
-                  );
-                },
-              ),
+        if (isAdmin)
+          _serviceCard(
+            "Partner Approvals",
+              Icons.verified_user,
+              Colors.green,
+              "Approve Partners",
+                  () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                    const PartnerApprovalPage(),
+                  ),
+                );
+              },
+            ),
           ],
         );
       },
     );
   }
 
+
+
   Widget _serviceCard(
+
       String title,
       IconData icon,
       Color color,
@@ -986,7 +944,8 @@ class _HomePageState extends State<HomePage> {
       VoidCallback onTap,
       ) {
 
-    return Container(
+
+      return Container(
 
       margin: const EdgeInsets.all(8),
 
@@ -1038,23 +997,19 @@ class _HomePageState extends State<HomePage> {
               ),
 
               Padding(
-                padding: const EdgeInsets.all(28),
+                padding: const EdgeInsets.all(20),
 
                 child: Column(
-                  crossAxisAlignment:
-                  CrossAxisAlignment.start,
-
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
 
                     Container(
-
                       padding: const EdgeInsets.all(12),
-
                       decoration: BoxDecoration(
-                        color: color.withValues(alpha:0.1),
+                        color: color.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-
                       child: Icon(
                         icon,
                         color: color,
@@ -1062,14 +1017,15 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
 
-                    const Spacer(),
+                    const SizedBox(height: 16),
 
                     Text(
                       title,
-
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontWeight: FontWeight.w900,
-                        fontSize: 20,
+                        fontSize: 18,
                         color: Color(0xFF0A2540),
                       ),
                     ),
@@ -1078,7 +1034,8 @@ class _HomePageState extends State<HomePage> {
 
                     Text(
                       sub,
-
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.grey.shade600,
@@ -1086,16 +1043,14 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
 
-                    const SizedBox(height: 15),
+                    const SizedBox(height: 12),
 
                     Container(
                       height: 4,
                       width: 40,
-
                       decoration: BoxDecoration(
                         color: color,
-                        borderRadius:
-                        BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                   ],
@@ -1327,27 +1282,6 @@ class _HomePageState extends State<HomePage> {
               Navigator.pop(context);
             },
           ),
-
-          if (isAdmin)
-            ListTile(
-
-              leading: const Icon(Icons.settings),
-
-              title: const Text("Site Manager"),
-
-              onTap: () {
-
-                Navigator.pop(context);
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                    const SiteManagerPage(),
-                  ),
-                );
-              },
-            ),
         ],
       ),
     );

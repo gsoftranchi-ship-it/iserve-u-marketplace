@@ -169,6 +169,7 @@ class _SupportPageState
 
                     return;
                   }
+                  debugPrint('SUBMIT BUTTON CLICKED');
 
                   await SupportService()
                       .createTicket(

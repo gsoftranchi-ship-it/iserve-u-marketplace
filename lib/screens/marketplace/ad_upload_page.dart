@@ -40,9 +40,9 @@ class _AdvertisementPageState
   String transactionId = '';
 
   String selectedDuration =
-      '1_day';
+      '3_days';
 
-  String? selectedCategory;
+
 
   bool isUploading = false;
 
@@ -51,9 +51,9 @@ class _AdvertisementPageState
   double uploadProgress = 0;
 
   String uploadStatus =
-      "Preparing files...";
+      "Preparing Advertisement...";
 
-  Map<String, dynamic>? selectedSiteData;
+
 
   List<XFile> selectedImages = [];
 
@@ -160,240 +160,61 @@ class _AdvertisementPageState
     }
   }
 
-  // =========================================================
-  // PRICE ENGINE
-  // =========================================================
+  void _recalculatePrice() {
 
-  void _recalculatePrice() async {
+    int finalPrice = 99;
 
-    try {
+    switch (selectedDuration) {
 
-      // =========================================
-      // ALL SITES MODE
-      // =========================================
+      case '7_days':
+        finalPrice = 199;
+        break;
 
-      if (
-      selectedCategory ==
-          '🌍 All Sites'
-      ) {
+      case '15_days':
+        finalPrice = 349;
+        break;
 
-        final sites =
-        await FirebaseFirestore
-            .instance
-            .collection(
-            'signage_sites')
-            .get();
+      case '30_days':
+        finalPrice = 599;
+        break;
 
-        int totalOneDayPrice = 0;
-
-        double highestVideoMultiplier = 1.0;
-
-        for (final doc in sites.docs) {
-
-          final data = doc.data();
-
-          final pricing =
-          data['pricing']
-          as Map<String, dynamic>?;
-
-          final oneDayPrice =
-              pricing?['1_day'] ?? 0;
-
-          totalOneDayPrice +=
-              (oneDayPrice as num)
-                  .toInt();
-
-          final multiplier =
-          (data['videoMultiplier']
-              ?? 1.0)
-              .toDouble();
-
-          if (
-          multiplier >
-              highestVideoMultiplier
-          ) {
-
-            highestVideoMultiplier =
-                multiplier;
-          }
-        }
-
-        // =====================================
-        // DURATION
-        // =====================================
-
-        int durationMultiplier = 1;
-
-        switch (selectedDuration) {
-
-          case '7_days':
-
-            durationMultiplier = 7;
-
-            break;
-
-          case '15_days':
-
-            durationMultiplier = 15;
-
-            break;
-
-          case '30_days':
-
-            durationMultiplier = 30;
-
-            break;
-
-          default:
-
-            durationMultiplier = 1;
-        }
-
-        int finalPrice =
-            totalOneDayPrice *
-                durationMultiplier;
-
-        // =====================================
-        // VIDEO MULTIPLIER
-        // =====================================
-
-        if (selectedVideos.isNotEmpty) {
-
-          finalPrice =
-              (
-                  finalPrice *
-                      highestVideoMultiplier
-              ).toInt();
-        }
-
-        // =====================================
-        // OPTIONAL GLOBAL DISCOUNT
-        // =====================================
-
-        finalPrice =
-            (finalPrice * 0.90)
-                .toInt();
-
-        if (mounted) {
-
-          setState(() {
-
-            price =
-                finalPrice.toString();
-
-            _priceController.text =
-                price;
-          });
-        }
-
-        return;
-      }
-
-      // =========================================
-      // SINGLE SITE
-      // =========================================
-
-      if (selectedSiteData == null) {
-        return;
-      }
-
-      final pricing =
-      selectedSiteData!['pricing']
-      as Map<String, dynamic>?;
-
-      final int oneDayPrice =
-          pricing?['1_day'] ?? 0;
-
-      int durationMultiplier = 1;
-
-      switch (selectedDuration) {
-
-        case '7_days':
-
-          durationMultiplier = 7;
-
-          break;
-
-        case '15_days':
-
-          durationMultiplier = 15;
-
-          break;
-
-        case '30_days':
-
-          durationMultiplier = 30;
-
-          break;
-
-        default:
-
-          durationMultiplier = 1;
-      }
-
-      int finalPrice =
-          oneDayPrice *
-              durationMultiplier;
-
-      double videoMultiplier =
-      (selectedSiteData![
-      'videoMultiplier'] ??
-          1.0)
-          .toDouble();
-
-      if (selectedVideos.isNotEmpty) {
-
-        finalPrice =
-            (
-                finalPrice *
-                    videoMultiplier
-            ).toInt();
-      }
-
-      if (mounted) {
-
-        setState(() {
-
-          price =
-              finalPrice.toString();
-          _priceController.text =
-              price;
-        });
-      }
-
-    } catch (e) {
-
-      debugPrint(
-        "PRICE ENGINE ERROR: $e",
-      );
+      default:
+        finalPrice = 99;
     }
+
+    if (selectedVideos.isNotEmpty) {
+      finalPrice += 100;
+    }
+
+    setState(() {
+
+      price = finalPrice.toString();
+
+      _priceController.text = price;
+    });
   }
   DateTime _calculateEndDate() {
 
     switch (selectedDuration) {
 
       case '7_days':
-
         return DateTime.now().add(
           const Duration(days: 7),
         );
 
       case '15_days':
-
         return DateTime.now().add(
           const Duration(days: 15),
         );
 
       case '30_days':
-
         return DateTime.now().add(
           const Duration(days: 30),
         );
 
       default:
-
         return DateTime.now().add(
-          const Duration(days: 1),
+          const Duration(days: 3),
         );
     }
   }
@@ -412,14 +233,7 @@ class _AdvertisementPageState
       return;
     }
 
-    if (selectedCategory == null) {
 
-      _showError(
-        "Please select LED panel",
-      );
-
-      return;
-    }
 
     if (
     selectedImages.isEmpty &&
@@ -445,7 +259,7 @@ class _AdvertisementPageState
         uploadProgress = 0;
 
         uploadStatus =
-        "Preparing Campaign...";
+        "Preparing Advertisement...";
       });
     }
 
@@ -468,18 +282,13 @@ class _AdvertisementPageState
       }
 
       // =====================================================
-      // STORAGE
+      // CREATE CAMPAIGN
       // =====================================================
 
       final storage =
       FirebaseStorageService();
 
-      // =====================================================
-      // CREATE CAMPAIGN
-      // =====================================================
-
-      final campaign =
-      CampaignModel(
+      final campaign = CampaignModel(
 
         id: '',
 
@@ -487,65 +296,25 @@ class _AdvertisementPageState
 
         title: title.trim(),
 
-        description:
-        description.trim(),
-        transactionId:
-        transactionId.trim(),
+        description: description.trim(),
 
-        paymentStatus:
-        'submitted',
+        transactionId: transactionId.trim(),
 
-        contactInfo:
-        contact.trim(),
+        paymentStatus: 'submitted',
 
-        price:
-        double.tryParse(price) ?? 0,
+        contactInfo: contact.trim(),
+
+        price: double.tryParse(price) ?? 0,
 
         isActive: false,
 
-        status:
-        'pending_approval',
+        status: 'pending',
 
         priority: 1,
 
-        rotationType:
-        'sequential',
+        rotationType: 'sequential',
 
-        siteIds:
-
-        selectedCategory ==
-            '🌍 All Sites'
-
-            ? ['ALL']
-
-            : [selectedCategory!],
-        startDate:
-        DateTime.now(),
-
-        endDate:
-        _calculateEndDate(),
-
-        durationDays:
-        selectedDuration == '1_day'
-            ? 1
-            : selectedDuration == '7_days'
-            ? 7
-            : selectedDuration == '15_days'
-            ? 15
-            : 30,
-
-        durationLabel:
-        selectedDuration == '1_day'
-            ? '1 Day'
-            : selectedDuration == '7_days'
-            ? '7 Days'
-            : selectedDuration == '15_days'
-            ? '15 Days'
-            : '30 Days',
-
-        // ===============================================
-        // LEGACY SUPPORT
-        // ===============================================
+        siteIds: [],
 
         mediaUrl: '',
 
@@ -553,29 +322,39 @@ class _AdvertisementPageState
 
         durationSeconds: 10,
 
-        // ===============================================
-        // ANALYTICS
-        // ===============================================
+        startDate: DateTime.now(),
+
+        endDate: _calculateEndDate(),
+
+        durationDays:
+        selectedDuration == '3_days'
+            ? 3
+            : selectedDuration == '7_days'
+            ? 7
+            : selectedDuration == '15_days'
+            ? 15
+            : 30,
+
+        durationLabel:
+        selectedDuration == '3_days'
+            ? '3 Days'
+            : selectedDuration == '7_days'
+            ? '7 Days'
+            : selectedDuration == '15_days'
+            ? '15 Days'
+            : '30 Days',
 
         totalPlays: 0,
 
         totalImpressions: 0,
 
-        createdAt:
-        DateTime.now(),
+        createdAt: DateTime.now(),
 
-        updatedAt:
-        DateTime.now(),
+        updatedAt: DateTime.now(),
       );
 
-      // =====================================================
-      // SAVE CAMPAIGN
-      // =====================================================
-
       final campaignId =
-      await CampaignService
-          .createCampaign(
-
+      await CampaignService.createCampaign(
         campaign: campaign,
       );
 
@@ -620,6 +399,24 @@ class _AdvertisementPageState
           image,
 
               (p) {},
+        );
+        await FirebaseFirestore.instance
+            .collection('campaigns')
+            .doc(campaignId)
+            .update({
+          'mediaUrl': url,
+          'mediaType': 'image',
+        });
+
+        final checkDoc =
+        await FirebaseFirestore.instance
+            .collection('campaigns')
+            .doc(campaignId)
+            .get();
+
+        debugPrint(
+          "AFTER UPDATE => "
+              "${checkDoc.data()?['mediaUrl']}",
         );
 
         // ===============================================
@@ -719,6 +516,15 @@ class _AdvertisementPageState
 
               (p) {},
         );
+        if (selectedImages.isEmpty && i == 0) {
+          await FirebaseFirestore.instance
+              .collection('campaigns')
+              .doc(campaignId)
+              .update({
+            'mediaUrl': videoUrl,
+            'mediaType': 'video',
+          });
+        }
 
         final asset =
         MediaAssetModel(
@@ -790,7 +596,7 @@ class _AdvertisementPageState
           uploadProgress = 1;
 
           uploadStatus =
-          "Campaign Submitted";
+          "Advertisement Submitted";
         });
       }
 
@@ -867,8 +673,7 @@ class _AdvertisementPageState
             ),
 
             title: const Text(
-
-              "Post Listing",
+              "Create Advertisement",
 
               style: TextStyle(
                 color: Colors.white,
@@ -913,25 +718,55 @@ class _AdvertisementPageState
 
                 children: [
 
-                  _buildMediaButtons(),
+                  Row(
 
-                  const SizedBox(
-                      height: 20),
+                    children: [
 
-                  const Text(
+                      Expanded(
 
-                    "Target LED Panel",
+                        child: ElevatedButton.icon(
 
-                    style: TextStyle(
-                      fontWeight:
-                      FontWeight.bold,
+                          onPressed: _pickImages,
+
+                          icon: const Icon(
+                            Icons.image,
+                          ),
+
+                          label: const Text(
+                            "Add Images",
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 10),
+
+                      Expanded(
+
+                        child: ElevatedButton.icon(
+
+                          onPressed: _pickVideo,
+
+                          icon: const Icon(
+                            Icons.video_library,
+                          ),
+
+                          label: const Text(
+                            "Add Videos",
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+
+                  Text(
+                    "${selectedImages.length} Images • ${selectedVideos.length} Videos Selected",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
 
-                  const SizedBox(
-                      height: 8),
-
-                  _buildDynamicCategoryDropdown(),
+                  const SizedBox(height: 20),
 
                   const SizedBox(
                       height: 20),
@@ -960,9 +795,9 @@ class _AdvertisementPageState
 
                       DropdownMenuItem(
 
-                        value: '1_day',
+                        value: '3_days',
 
-                        child: Text("1 Day"),
+                        child: Text("3 Days"),
                       ),
 
                       DropdownMenuItem(
@@ -1007,7 +842,7 @@ class _AdvertisementPageState
                       height: 20),
 
                   _field(
-                    "Business Title",
+                    "Advertisement Title",
                         (v) =>
                     title = v!,
                   ),
@@ -1281,7 +1116,7 @@ class _AdvertisementPageState
 
                                       height: 180,
 
-                                      fit: BoxFit.cover,
+                                      fit: BoxFit.contain,
 
                                       errorBuilder:
                                           (
@@ -1390,7 +1225,7 @@ class _AdvertisementPageState
                       child:
                       const Text(
 
-                        "PUBLISH NOW",
+                        "SUBMIT ADVERTISEMENT",
 
                         style:
                         TextStyle(
@@ -1472,245 +1307,6 @@ class _AdvertisementPageState
               ),
             ),
           ),
-      ],
-    );
-  }
-
-  // =========================================================
-  // DROPDOWN
-  // =========================================================
-
-
-  Widget _buildDynamicCategoryDropdown() {
-
-    return StreamBuilder<QuerySnapshot>(
-
-      stream:
-      FirebaseFirestore
-          .instance
-          .collection(
-          'signage_sites')
-          .orderBy('name')
-          .snapshots(),
-
-      builder:
-          (context, snapshot) {
-
-        if (snapshot.connectionState ==
-            ConnectionState.waiting) {
-
-          return const Center(
-            child:
-            CircularProgressIndicator(),
-          );
-        }
-
-        if (snapshot.hasError) {
-
-          return const Text(
-            "Failed to load LED panels",
-          );
-        }
-
-        if (!snapshot.hasData ||
-            snapshot.data!.docs.isEmpty) {
-
-          return const Text(
-            "No LED panels available",
-          );
-        }
-
-        // =====================================
-        // DYNAMIC SITE LIST
-        // =====================================
-
-        final dynamicSites = [
-
-          '🌍 All Sites',
-
-          ...snapshot.data!.docs.map((doc) {
-
-            final data =
-            doc.data()
-            as Map<String, dynamic>?;
-
-            return data?['name']
-                ?.toString() ?? '';
-
-          }).where(
-                (e) => e.isNotEmpty,
-          ),
-        ];
-
-        // =====================================
-        // DEFAULT SELECTION
-        // =====================================
-
-        selectedCategory ??=
-            dynamicSites.first;
-
-
-        // =====================================
-        // DROPDOWN UI
-        // =====================================
-
-        return DropdownButtonFormField<
-            String>(
-
-          initialValue:
-          selectedCategory,
-
-          decoration:
-          InputDecoration(
-
-            filled: true,
-
-            fillColor:
-            Colors.grey
-                .shade100,
-
-            border:
-            OutlineInputBorder(
-              borderRadius:
-              BorderRadius.circular(
-                12,
-              ),
-            ),
-          ),
-
-          items:
-          dynamicSites.map(
-                (site) {
-
-              return DropdownMenuItem(
-
-                value: site,
-
-                child: Text(site),
-              );
-            },
-          ).toList(),
-
-          onChanged:
-              (value) async {
-
-            if (value == null) {
-              return;
-            }
-
-            setState(() {
-
-              selectedCategory =
-                  value;
-            });
-
-            // =====================================
-            // ALL SITES
-            // =====================================
-
-            if (
-            value ==
-                '🌍 All Sites'
-            ) {
-
-              selectedSiteData = null;
-
-              _recalculatePrice();
-
-              return;
-            }
-
-            // =====================================
-            // SINGLE SITE
-            // =====================================
-
-            try {
-
-              final query =
-              await FirebaseFirestore
-                  .instance
-                  .collection(
-                  'signage_sites')
-                  .where(
-                'name',
-                isEqualTo:
-                value,
-              )
-                  .limit(1)
-                  .get();
-
-              if (query.docs.isEmpty) {
-                return;
-              }
-
-              selectedSiteData =
-                  query
-                      .docs.first
-                      .data();
-
-              _recalculatePrice();
-
-            } catch (e) {
-
-              debugPrint(
-                "Pricing Load Error: $e",
-              );
-            }
-          },
-        );
-      },
-    );
-  }
-
-  // =========================================================
-  // MEDIA BUTTONS
-  // =========================================================
-
-  Widget _buildMediaButtons() {
-
-    return Row(
-
-      children: [
-
-        Expanded(
-
-          child: ActionButton(
-
-            icon:
-            Icons.add_a_photo,
-
-            label:
-            "Images (${selectedImages.length})",
-
-            onTap:
-            _pickImages,
-
-            active:
-            selectedImages
-                .isNotEmpty,
-          ),
-        ),
-
-        const SizedBox(width: 10),
-
-        Expanded(
-
-          child: ActionButton(
-
-            icon: Icons.videocam,
-
-            label:
-            selectedVideos.isEmpty
-                ? "Add Videos"
-                : "Videos (${selectedVideos.length})",
-
-            onTap:
-            _pickVideo,
-
-            active:
-            selectedVideos.isNotEmpty,
-          ),
-        ),
       ],
     );
   }

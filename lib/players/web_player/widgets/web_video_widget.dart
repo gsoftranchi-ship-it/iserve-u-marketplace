@@ -62,6 +62,8 @@ class _VideoPlayerWidgetState
 
   bool _isDisposed = false;
 
+  bool _videoCompleted = false;
+
   // =========================================================
   // INIT
   // =========================================================
@@ -129,11 +131,6 @@ class _VideoPlayerWidgetState
       if (_isDisposed) {
         return;
       }
-
-      debugPrint(
-        "VIDEO INITIALIZING",
-      );
-
       late VideoPlayerController
       controller;
 
@@ -142,11 +139,6 @@ class _VideoPlayerWidgetState
       // =====================================
 
       if (kIsWeb) {
-
-        debugPrint(
-          "WEB VIDEO PLAYBACK",
-        );
-
         controller =
             VideoPlayerController
                 .networkUrl(
@@ -212,7 +204,7 @@ class _VideoPlayerWidgetState
       // =====================================
 
       await controller.setLooping(
-        true,
+        false,
       );
 
       await controller.setVolume(
@@ -232,6 +224,7 @@ class _VideoPlayerWidgetState
       // =====================================
 
       await controller.play();
+      _videoCompleted = false;
 
       // =====================================
       // HEARTBEAT
@@ -249,10 +242,6 @@ class _VideoPlayerWidgetState
 
         _hasError = false;
       });
-
-      debugPrint(
-        "VIDEO READY",
-      );
 
     } catch (e) {
 
@@ -299,6 +288,27 @@ class _VideoPlayerWidgetState
           controller.value;
 
       if (!value.isInitialized) {
+        return;
+      }
+      // =====================================
+// VIDEO FINISHED
+// =====================================
+
+      final finished =
+          value.duration.inMilliseconds > 0 &&
+              value.position.inMilliseconds >=
+                  value.duration.inMilliseconds - 300;
+
+      if (finished && !_videoCompleted) {
+
+        _videoCompleted = true;
+
+        debugPrint(
+          "VIDEO FINISHED ONCE",
+        );
+
+        widget.onVideoFinished?.call();
+
         return;
       }
 
@@ -417,29 +427,14 @@ class _VideoPlayerWidgetState
     // VIDEO
     // =====================================
 
-    return SizedBox.expand(
-
-      child: FittedBox(
-
-        fit: BoxFit.cover,
-
-        child: SizedBox(
-
-          width:
-          _controller!
-              .value
-              .size
-              .width,
-
-          height:
-          _controller!
-              .value
-              .size
-              .height,
-
-          child: VideoPlayer(
-            _controller!,
-          ),
+    return Container(
+      color: Colors.black,
+      alignment: Alignment.center,
+      child: AspectRatio(
+        aspectRatio:
+        _controller!.value.aspectRatio,
+        child: VideoPlayer(
+          _controller!,
         ),
       ),
     );

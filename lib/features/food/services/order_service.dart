@@ -39,6 +39,9 @@ class OrderService {
     required String deliveryNote,
 
     required String pincode,
+
+    double? customerLatitude,
+    double? customerLongitude,
   }) async {
 
     final currentUser =
@@ -88,6 +91,12 @@ class OrderService {
 
       'pincode':
       pincode,
+
+      'customerLatitude':
+      customerLatitude,
+
+      'customerLongitude':
+      customerLongitude,
 
       'items':
       items,

@@ -3,15 +3,13 @@ import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:provider/provider.dart';
-
 import 'firebase_options.dart';
 
 // SCREENS
 import 'screens/home/home_page.dart';
 import 'screens/auth/login_page.dart';
-import 'screens/marketplace/led_display_page.dart';
+
 
 // PROVIDERS / SERVICES
 import 'screens/food_dining/food_services.dart';
@@ -37,10 +35,7 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-
     await FCMService.initialize();
-
-
 
   } catch (e) {
 
@@ -99,30 +94,6 @@ class IServeUApp extends StatelessWidget {
         ),
       ),
 
-      // DYNAMIC ROUTES
-      onGenerateRoute: (settings) {
-        final routeName = settings.name;
-
-        if (routeName != null &&
-            routeName.startsWith('/display/')) {
-
-          final uri = Uri.parse(routeName);
-
-          if (uri.pathSegments.length >= 2) {
-
-            final siteName = uri.pathSegments[1];
-
-            return MaterialPageRoute(
-              builder: (_) => LEDDisplayPage(
-                siteName: siteName,
-              ),
-            );
-          }
-        }
-
-        return null;
-      },
-
       home: const AuthWrapper(),
     );
   }
@@ -164,7 +135,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
         if (authSnapshot.hasData) {
 
           final User user = authSnapshot.data!;
-          FCMService.initialize();
 
           // RESET CACHE IF USER CHANGES
           if (_lastUserId != user.uid) {
@@ -250,6 +220,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
                 );
               }
 
+
               // DEFAULT ROLE
               String role = 'viewer';
 
@@ -267,6 +238,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
               return HomePage(
                 userRole: role,
               );
+
             },
           );
         }

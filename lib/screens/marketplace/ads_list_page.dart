@@ -6,7 +6,7 @@ import '../../core/models/campaign_model.dart';
 
 import 'ad_details_page.dart';
 import 'ad_upload_page.dart';
-import 'site_manager_page.dart';
+
 
 class AdsListPage extends StatelessWidget {
 
@@ -62,7 +62,7 @@ class AdsListPage extends StatelessWidget {
 
         title: const Text(
 
-          "Campaign Marketplace",
+          "My Advertisements",
 
           style: TextStyle(
             fontWeight:
@@ -71,37 +71,6 @@ class AdsListPage extends StatelessWidget {
         ),
 
         actions: [
-
-          // =====================================
-          // ADMIN PANEL
-          // =====================================
-
-          if (isAdmin)
-
-            TextButton.icon(
-
-              onPressed: () {
-
-                Navigator.push(
-
-                  context,
-
-                  MaterialPageRoute(
-
-                    builder: (_) => const SiteManagerPage(),
-                  ),
-                );
-              },
-
-              icon: const Icon(
-                Icons.settings,
-                size: 18,
-              ),
-
-              label: const Text(
-                "Manage",
-              ),
-            ),
 
           const SizedBox(width: 10),
 
@@ -142,7 +111,7 @@ class AdsListPage extends StatelessWidget {
 
               label: const Text(
 
-                "New Campaign",
+                "Create Ad",
 
                 style: TextStyle(
                   color: Colors.white,
@@ -414,20 +383,19 @@ class AdsListPage extends StatelessWidget {
     try {
 
       final snapshot =
-      await FirebaseFirestore
-          .instance
+      await FirebaseFirestore.instance
+          .collection('campaigns')
+          .doc(campaignId)
           .collection('media_assets')
-
-          .where(
-        'campaignId',
-        isEqualTo: campaignId,
-      )
-
           .get();
 
       return snapshot.docs.length;
 
-    } catch (_) {
+    } catch (e) {
+
+      debugPrint(
+        "ASSET COUNT ERROR => $e",
+      );
 
       return 0;
     }
@@ -604,7 +572,7 @@ class AdsListPage extends StatelessWidget {
 
                         title:
                         const Text(
-                          "Delete Campaign?",
+                          "Delete Advertisement?",
                         ),
 
                         content:
@@ -679,7 +647,7 @@ class AdsListPage extends StatelessWidget {
                         const SnackBar(
 
                           content: Text(
-                            "Campaign Deleted",
+                            "Advertisement Deleted",
                           ),
                         ),
                       );
@@ -764,7 +732,7 @@ class AdsListPage extends StatelessWidget {
                 children: [
 
                   _badge(
-                    "CAMPAIGN",
+                    "ADVERTISEMENT",
                     Colors.orange,
                   ),
 
@@ -977,7 +945,7 @@ class AdsListPage extends StatelessWidget {
 
           const Text(
 
-            "No campaigns available",
+            "No advertisements available",
 
             style: TextStyle(
 

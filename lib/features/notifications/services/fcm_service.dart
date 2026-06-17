@@ -39,7 +39,7 @@ class FCMService {
     await _messaging.getToken();
 
     if (kDebugMode) {
-      debugPrint('FCM TOKEN = $token');
+
     }
 
     final user =
@@ -61,7 +61,7 @@ class FCMService {
 
 
       if (kDebugMode) {
-        debugPrint('FCM TOKEN = $token');
+
       }
     }
 

@@ -23,4 +23,9 @@ class NotificationTypes {
 
   static const String cancelled =
       'cancelled';
+  static const String supportTicket =
+      'support';
+
+  static const String partnerApplication =
+      'partnerApplication';
 }

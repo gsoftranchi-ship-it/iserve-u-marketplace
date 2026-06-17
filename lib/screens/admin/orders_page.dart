@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../food_dining/order_status.dart';
 import '../../features/notifications/services/notification_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 class OrdersPage extends StatelessWidget {
   final String userRole;
 
@@ -10,6 +11,18 @@ class OrdersPage extends StatelessWidget {
     super.key,
     required this.userRole,
     });
+  Future<void> openGoogleMapsByCoordinates(
+      double lat,
+      double lng,
+      ) async {
+    final url =
+        'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng';
+
+    await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+  }
   Future<void> assignRider({
 
     required String orderId,
@@ -53,6 +66,7 @@ class OrdersPage extends StatelessWidget {
       type: 'delivery',
     );
   }
+
   Future<void> updateOrderStatus(
       String orderId,
       String status,
@@ -89,6 +103,81 @@ class OrdersPage extends StatelessWidget {
           .toDouble(),
     };
   }
+  Future<void> completeDelivery(
+      String orderId,
+      Map<String, dynamic> data,
+      ) async {
+
+    final pricing = await getPricing();
+
+    final totalAmount =
+    (data['totalAmount'] ?? 0).toDouble();
+
+    final platformCommission =
+    pricing['platformCommission']!;
+
+    final deliveryCharge =
+    pricing['deliveryCharge']!;
+
+    final restaurantEarning =
+        totalAmount -
+            platformCommission -
+            deliveryCharge;
+
+    await FirebaseFirestore.instance
+        .collection('orders')
+        .doc(orderId)
+        .update({
+
+      'status': OrderStatus.delivered,
+
+      'deliveredAt':
+      FieldValue.serverTimestamp(),
+
+      'platformCommission':
+      platformCommission,
+
+      'deliveryCharge':
+      deliveryCharge,
+
+      'restaurantEarning':
+      restaurantEarning,
+    });
+
+    // Customer
+    await NotificationService().createNotification(
+      userId: data['userId'],
+      title: 'Order Delivered',
+      body:
+      'Your order has been delivered successfully.',
+      type: 'delivery',
+    );
+
+    // Restaurant
+    await NotificationService().createNotification(
+      userId: data['restaurantId'],
+      title: 'Order Delivered',
+      body: 'Order delivered successfully.',
+      type: 'order',
+    );
+
+    // Admin
+    final adminDocs =
+    await FirebaseFirestore.instance
+        .collection('users')
+        .where('role', isEqualTo: 'admin')
+        .get();
+
+    for (final admin in adminDocs.docs) {
+      await NotificationService().createNotification(
+        userId: admin.id,
+        title: 'Order Delivered',
+        body:
+        'An order has been delivered successfully.',
+        type: 'order',
+      );
+    }
+  }
   @override
   Widget build(BuildContext context) {
 
@@ -102,11 +191,6 @@ class OrdersPage extends StatelessWidget {
     // CLIENT FILTER
     if (userRole == 'client' &&
         currentUser != null) {
-
-      debugPrint(
-        "🔍 Filtering orders for User: ${currentUser.uid}",
-      );
-
       query = query.where(
         'userId',
         isEqualTo: currentUser.uid,
@@ -147,9 +231,6 @@ class OrdersPage extends StatelessWidget {
     isEqualTo: currentUser.uid,
     );
 
-    debugPrint(
-    "🍽 Restaurant View: ${currentUser.uid}",
-    );
     }
 
     return Scaffold(
@@ -1026,6 +1107,12 @@ class OrdersPage extends StatelessWidget {
                                                  'restaurantLandmark':
                                                  restaurantData['landmark'] ?? '',
 
+                                                 'restaurantLatitude':
+                                                 restaurantData['latitude'],
+
+                                                 'restaurantLongitude':
+                                                 restaurantData['longitude'],
+
                                                'status'
                                                :OrderStatus.accepted,
 
@@ -1262,18 +1349,29 @@ class OrdersPage extends StatelessWidget {
                                     OrderStatus.rejected,
                                   );
 
-                                  await NotificationService()
-                                      .createNotification(
-
+                                  // CUSTOMER
+                                  await NotificationService().createNotification(
                                     userId: data['userId'],
-
                                     title: 'Order Rejected',
-
-                                    body:
-                                    'Restaurant could not process your order.',
-
+                                    body: 'Restaurant could not process your order.',
                                     type: 'order',
                                   );
+
+                                  // ADMIN Notification
+                                  final adminDocs = await FirebaseFirestore.instance
+                                      .collection('users')
+                                      .where('role', isEqualTo: 'admin')
+                                      .get();
+
+                                  for (final admin in adminDocs.docs) {
+                                    await NotificationService().createNotification(
+                                      userId: admin.id,
+                                      title: 'Order Rejected',
+                                      body:
+                                      '${data['restaurantName'] ?? 'Restaurant'} rejected Order #$orderId',
+                                      type: 'order',
+                                    );
+                                  }
                                 },
 
                                 icon: const Icon(
@@ -1472,8 +1570,36 @@ class OrdersPage extends StatelessWidget {
                                   "Phone: ${data['restaurantPhone'] ?? 'N/A'}",
                                 ),
 
-                                Text(
-                                  "Address: ${data['restaurantAddress'] ?? 'N/A'}",
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+
+                                    Expanded(
+                                      child: Text(
+                                        "Address: ${data['restaurantAddress'] ?? 'N/A'}",
+                                      ),
+                                    ),
+
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.navigation,
+                                        color: Colors.green,
+                                      ),
+                                      tooltip: 'Navigate to Restaurant',
+                                      onPressed: () {
+                                         if (data['restaurantLatitude'] != null &&
+                                            data['restaurantLongitude'] != null) {
+
+                                          openGoogleMapsByCoordinates(
+                                            (data['restaurantLatitude'] as num)
+                                                .toDouble(),
+                                            (data['restaurantLongitude'] as num)
+                                                .toDouble(),
+                                          );
+                                        }
+                                      },
+                                    ),
+                                  ],
                                 ),
 
                                 Text(
@@ -1510,11 +1636,38 @@ class OrdersPage extends StatelessWidget {
 
                               const SizedBox(height: 6),
 
-                              Text(
-                                "Address: ${data['deliveryAddress'] ?? 'N/A'}",
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
 
-                                softWrap: true,
-                              ),
+                                    Expanded(
+                                      child: Text(
+                                        "Address: ${data['deliveryAddress'] ?? 'N/A'}",
+                                        softWrap: true,
+                                      ),
+                                    ),
+
+                                    if (data['customerLatitude'] != null &&
+                                        data['customerLongitude'] != null)
+
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.navigation,
+                                          color: Colors.blue,
+                                        ),
+                                        tooltip: 'Navigate',
+                                        onPressed: () {
+
+                                          openGoogleMapsByCoordinates(
+                                            (data['customerLatitude'] as num)
+                                                .toDouble(),
+                                            (data['customerLongitude'] as num)
+                                                .toDouble(),
+                                          );
+                                        },
+                                      ),
+                                  ],
+                                ),
 
                               Text(
                                 "Landmark: ${data['landmark'] ?? 'N/A'}",
@@ -1592,16 +1745,28 @@ class OrdersPage extends StatelessWidget {
                                 OrderStatus.pickedUp,
                               );
 
-                              await NotificationService()
-                                  .createNotification(
-
+                              await NotificationService().createNotification(
                                 userId: data['userId'],
-
                                 title: 'Order Picked Up',
                                 body: 'Your order has been picked up and will be delivered soon.',
-
                                 type: 'delivery',
                               );
+
+                                // ADMIN NOTIFICATION
+                              final adminDocs = await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .where('role', isEqualTo: 'admin')
+                                  .get();
+
+                              for (final admin in adminDocs.docs) {
+                                await NotificationService().createNotification(
+                                  userId: admin.id,
+                                  title: 'Order Picked Up',
+                                  body:
+                                  '${data['customerName'] ?? 'Customer'} order has been picked up.',
+                                  type: 'order',
+                                );
+                              }
                             },
 
                             icon: const Icon(
@@ -1645,18 +1810,28 @@ class OrdersPage extends StatelessWidget {
                                 OrderStatus.outForDelivery,
                               );
 
-                              await NotificationService()
-                                  .createNotification(
-
+                              await NotificationService().createNotification(
                                 userId: data['userId'],
-
                                 title: 'Order Out For Delivery',
-
-                                body:
-                                'Your order is on the way.',
-
+                                body: 'Your order is on the way.',
                                 type: 'delivery',
                               );
+
+                                // ADMIN NOTIFICATION
+                              final adminDocs = await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .where('role', isEqualTo: 'admin')
+                                  .get();
+
+                              for (final admin in adminDocs.docs) {
+                                await NotificationService().createNotification(
+                                  userId: admin.id,
+                                  title: 'Order Out For Delivery',
+                                  body:
+                                  '${data['customerName'] ?? 'Customer'} order is now out for delivery.',
+                                  type: 'order',
+                                );
+                              }
                             },
 
                             icon: const Icon(
@@ -1747,85 +1922,10 @@ class OrdersPage extends StatelessWidget {
                                           return;
                                         }
 
-                                       final pricing =
-                                       await getPricing();
-
-                                       final totalAmount =
-                                       (data['totalAmount'] ?? 0)
-                                           .toDouble();
-
-                                       final platformCommission =
-                                       pricing['platformCommission']!;
-
-                                       final deliveryCharge =
-                                       pricing['deliveryCharge']!;
-
-                                       final restaurantEarning =
-                                           totalAmount -
-                                               platformCommission -
-                                               deliveryCharge;
-
-                                       await FirebaseFirestore.instance
-                                           .collection('orders')
-                                           .doc(orderId)
-                                           .update({
-
-                                         'status': OrderStatus.delivered,
-
-
-                                         'deliveredAt':
-                                         FieldValue.serverTimestamp(),
-
-                                         'platformCommission':
-                                         platformCommission,
-
-                                         'deliveryCharge':
-                                         deliveryCharge,
-
-                                         'restaurantEarning':
-                                         restaurantEarning,
-                                       });
-                                       await NotificationService().createNotification(
-
-                                         userId: data['userId'],
-
-                                         title: 'Order Delivered',
-
-                                         body:
-                                         'Your order has been delivered successfully.',
-
-                                         type: 'delivery',
+                                       await completeDelivery(
+                                         orderId,
+                                         data,
                                        );
-                                       await NotificationService().createNotification(
-
-                                         userId: data['restaurantId'],
-
-                                         title: 'Order Delivered',
-
-                                         body: 'Order delivered successfully.',
-
-                                         type: 'order',
-                                       );
-                                       final adminDocs =
-                                       await FirebaseFirestore.instance
-                                           .collection('users')
-                                           .where('role', isEqualTo: 'admin')
-                                           .get();
-
-                                       for (final admin in adminDocs.docs) {
-
-                                         await NotificationService().createNotification(
-
-                                           userId: admin.id,
-
-                                           title: 'Order Delivered',
-
-                                           body:
-                                           'An order has been delivered successfully.',
-
-                                           type: 'order',
-                                         );
-                                       }
 
                                         if (dialogContext.mounted) {
 
@@ -1893,76 +1993,10 @@ class OrdersPage extends StatelessWidget {
                                             return;
                                           }
 
-                                          final pricing =
-                                          await getPricing();
-
-                                          final totalAmount =
-                                          (data['totalAmount'] ?? 0)
-                                              .toDouble();
-
-                                          final platformCommission =
-                                          pricing['platformCommission']!;
-
-                                          final deliveryCharge =
-                                          pricing['deliveryCharge']!;
-
-                                          final restaurantEarning =
-                                              totalAmount -
-                                                  platformCommission -
-                                                  deliveryCharge;
-
-                                          await FirebaseFirestore.instance
-                                              .collection('orders')
-                                              .doc(orderId)
-                                              .update({
-
-
-                                            'status': OrderStatus.delivered,
-
-                                            'deliveredAt':
-                                            FieldValue.serverTimestamp(),
-
-                                            'platformCommission':
-                                            platformCommission,
-
-                                            'deliveryCharge':
-                                            deliveryCharge,
-
-                                            'restaurantEarning':
-                                            restaurantEarning,
-                                          });
-                                          // Customer
-                                          await NotificationService().createNotification(
-                                            userId: data['userId'],
-                                            title: 'Order Delivered',
-                                            body: 'Your order has been delivered successfully.',
-                                            type: 'delivery',
+                                          await completeDelivery(
+                                            orderId,
+                                            data,
                                           );
-
-                                          // Restaurant
-                                          await NotificationService().createNotification(
-                                            userId: data['restaurantId'],
-                                            title: 'Order Delivered',
-                                            body: 'Order delivered successfully.',
-                                            type: 'order',
-                                          );
-
-                                          // Admin
-                                          final adminDocs =
-                                          await FirebaseFirestore.instance
-                                              .collection('users')
-                                              .where('role', isEqualTo: 'admin')
-                                              .get();
-
-                                          for (final admin in adminDocs.docs) {
-
-                                            await NotificationService().createNotification(
-                                              userId: admin.id,
-                                              title: 'Order Delivered',
-                                              body: 'An order has been delivered successfully.',
-                                              type: 'order',
-                                            );
-                                          }
 
                                           if (dialogContext.mounted) {
 

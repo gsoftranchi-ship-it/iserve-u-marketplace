@@ -204,6 +204,9 @@ class NotificationsPage extends StatelessWidget {
       case 'order':
         return Icons.receipt_long;
 
+      case 'support':
+        return  Icons.support_agent;
+
       default:
         return Icons.notifications;
     }

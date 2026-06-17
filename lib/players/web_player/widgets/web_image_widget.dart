@@ -25,7 +25,7 @@ class WebImageWidget
         imageUrl,
       ),
 
-      fit: BoxFit.cover,
+      fit: BoxFit.contain,
 
       gaplessPlayback: true,
 
