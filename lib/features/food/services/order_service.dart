@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../notifications/services/notification_service.dart';
 import '../../notifications/constants/notification_types.dart';
 
+
 class OrderService {
 
   final FirebaseFirestore _firestore =
@@ -66,6 +67,42 @@ class OrderService {
 
     final deliveryPin =
         1000 + random.nextInt(9000);
+    String serviceType = 'Regular';
+
+    String returnPolicy = 'No Return';
+
+    int returnDays = 0;
+
+    String returnCondition = 'Sealed Pack Only';
+
+    try {
+
+      final firstFoodId =
+      items.first['foodId'];
+
+      final foodDoc =
+      await _firestore
+          .collection('food_menu')
+          .doc(firstFoodId)
+          .get();
+
+      serviceType =
+          foodDoc.data()?['serviceType'] ??
+              'Regular';
+
+      returnPolicy =
+          foodDoc.data()?['returnPolicy'] ??
+              'No Return';
+
+      returnDays =
+          foodDoc.data()?['returnDays'] ??
+              0;
+
+      returnCondition =
+          foodDoc.data()?['returnCondition'] ??
+              'Sealed Pack Only';
+
+    } catch (_) {}
 
     await _firestore
         .collection('orders')
@@ -100,6 +137,15 @@ class OrderService {
 
       'items':
       items,
+
+      'serviceType':
+      serviceType,
+
+      'returnPolicy': returnPolicy,
+
+      'returnDays': returnDays,
+
+      'returnCondition': returnCondition,
 
       'totalAmount':
       totalAmount,

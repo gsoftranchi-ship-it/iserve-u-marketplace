@@ -24,8 +24,10 @@ class FoodPage extends StatefulWidget {
 class _FoodPageState extends State<FoodPage>
     with SingleTickerProviderStateMixin {
   String foodFilter = 'All';
+  String tiffinType = 'Weekly';
+  String marketplaceCategoryFilter = 'All';
   String selectedRestaurant =
-      'All Restaurants';
+      'All Providers';
 
   final OrderService
   _orderService =
@@ -58,6 +60,31 @@ class _FoodPageState extends State<FoodPage>
   Future<void> _loadDefaultAddress() async {
 
     try {
+
+      bool serviceEnabled =
+      await Geolocator.isLocationServiceEnabled();
+
+      if (!serviceEnabled) {
+        debugPrint('Location service disabled');
+        return;
+      }
+
+      LocationPermission permission =
+      await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        permission =
+        await Geolocator.requestPermission();
+      }
+
+      if (permission ==
+          LocationPermission.denied ||
+          permission ==
+              LocationPermission.deniedForever) {
+        debugPrint('Location permission denied');
+        return;
+      }
+
       Position position =
       await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
@@ -122,6 +149,34 @@ class _FoodPageState extends State<FoodPage>
 
     _tabController =
         TabController(length: 3, vsync: this);
+    _loadDefaultAddress();
+
+    _tabController.addListener(() {
+
+      if (!_tabController.indexIsChanging) return;
+
+      setState(() {});
+
+      // Food
+      if (_tabController.index == 0) {
+
+        if (foodFilter == 'Product') {
+          foodFilter = 'All';
+        }
+      }
+
+      // Tiffin
+      else if (_tabController.index == 1) {
+
+        foodFilter = 'All';
+      }
+
+      // Marketplace
+      else if (_tabController.index == 2) {
+
+        foodFilter = 'Product';
+      }
+    });
   }
 
   @override
@@ -147,7 +202,7 @@ class _FoodPageState extends State<FoodPage>
 
         title: const Text(
 
-          "Food & Dining",
+          "Store & Dining",
 
           style: TextStyle(
             fontWeight: FontWeight.bold,
@@ -224,26 +279,72 @@ class _FoodPageState extends State<FoodPage>
           ),
         ],
 
-        bottom: TabBar(
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(52),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFF001F5B),
+              border: Border(
+                bottom: BorderSide(
+                  color: Color(0xFFE5E7EB),
+                ),
+              ),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: false,
+              labelPadding: EdgeInsets.zero,
 
-          controller: _tabController,
+              labelColor: Color(0xFFFF6A00),
+              unselectedLabelColor:Colors.grey.shade300,
 
-          labelColor: Colors.orange,
-          unselectedLabelColor: Colors.grey,
+              labelStyle: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
 
-          indicatorColor: Colors.orange,
+              indicator: UnderlineTabIndicator(
+                borderSide: BorderSide(
+                  color: Color(0xFFFF6A00),
+                  width: 4,
+                ),
+                insets: EdgeInsets.symmetric(
+                  horizontal: 16,
+                ),
+              ),
+              indicatorWeight: 3,
 
-          tabs: const [
+              tabs: [
+                Tab(text: "Food"),
 
-            Tab(text: "🍽 Regular Food"),
-            Tab(text: "📅 Weekly Tiffin"),
-            Tab(text: "🗓 Monthly Tiffin"),
-          ],
+                Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+
+                      Text("Tiffin"),
+
+                      SizedBox(width: 4),
+
+                      Icon(
+                        Icons.arrow_drop_down,
+                        size: 16,
+                      ),
+                    ],
+                  ),
+                ),
+                Tab(text: "Marketplace"),
+              ],
+            ),
+          ),
         ),
       ),
 
       body: Column(
         children: [
+
+          const SizedBox(height: 8),
+
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: 12,
@@ -264,7 +365,7 @@ class _FoodPageState extends State<FoodPage>
               builder: (context, snapshot) {
 
                 final restaurants = <String>{
-                  'All Restaurants'
+                  'All Providers'
                 };
 
                 if (snapshot.hasData) {
@@ -293,7 +394,7 @@ class _FoodPageState extends State<FoodPage>
 
                   decoration: InputDecoration(
 
-                    labelText: 'Restaurant',
+                    labelText: 'Seller',
 
                     border: OutlineInputBorder(
                       borderRadius:
@@ -317,7 +418,7 @@ class _FoodPageState extends State<FoodPage>
                     setState(() {
                       selectedRestaurant =
                           value ??
-                              'All Restaurants';
+                              'All Providers';
                     });
                   },
                 );
@@ -336,7 +437,19 @@ class _FoodPageState extends State<FoodPage>
                 children: [
 
                   ChoiceChip(
-                    label: const Text('All'),
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize:
+                    MaterialTapTargetSize.shrinkWrap,
+                    selectedColor: const Color(0xFFE8F1FF),
+                    checkmarkColor: const Color(0xFF0A2540),
+
+                    label: const Text(
+                      'All',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     selected: foodFilter == 'All',
                     onSelected: (_) {
                       setState(() {
@@ -345,41 +458,226 @@ class _FoodPageState extends State<FoodPage>
                     },
                   ),
 
-                  const SizedBox(width: 8),
+                  if (_tabController.index != 2) ...[
+                    const SizedBox(width: 4),
 
-                  ChoiceChip(
-                    label: const Text('Veg'),
-                    selected: foodFilter == 'Veg',
-                    onSelected: (_) {
-                      setState(() {
-                        foodFilter = 'Veg';
-                      });
-                    },
-                  ),
+                    ChoiceChip(
+                      visualDensity: VisualDensity.compact,
+                      materialTapTargetSize:
+                      MaterialTapTargetSize.shrinkWrap,
+                      selectedColor: const Color(0xFFE8F1FF),
+                      checkmarkColor: const Color(0xFF0A2540),
 
-                  const SizedBox(width: 8),
+                      label: const Text(
+                        'Veg',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      selected: foodFilter == 'Veg',
+                      onSelected: (_) {
+                        setState(() {
+                          foodFilter = 'Veg';
+                        });
+                      },
+                    ),
 
-                  ChoiceChip(
-                    label: const Text('Non Veg'),
-                    selected: foodFilter == 'Non Veg',
-                    onSelected: (_) {
-                      setState(() {
-                        foodFilter = 'Non Veg';
-                      });
-                    },
-                  ),
+                    const SizedBox(width: 4),
+
+                    ChoiceChip(
+                      visualDensity: VisualDensity.compact,
+                      materialTapTargetSize:
+                      MaterialTapTargetSize.shrinkWrap,
+                      selectedColor: const Color(0xFFE8F1FF),
+                      checkmarkColor: const Color(0xFF0A2540),
+
+                      label: const Text(
+                        'Non Veg',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      selected: foodFilter == 'Non Veg',
+                      onSelected: (_) {
+                        setState(() {
+                          foodFilter = 'Non Veg';
+                        });
+                      },
+                    ),
+                  ],
+                  if (_tabController.index == 2)
+
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width < 600
+                          ? 215
+                          : 260,
+
+                      child: StreamBuilder<QuerySnapshot>(
+
+                        stream: FirebaseFirestore.instance
+                            .collection('food_menu')
+                            .where(
+                          'serviceType',
+                          isEqualTo: 'Marketplace Product',
+                        )
+                            .where(
+                          'available',
+                          isEqualTo: true,
+                        )
+                            .where(
+                          'restaurantActive',
+                          isEqualTo: true,
+                        )
+                            .snapshots(),
+
+                        builder: (context, snapshot) {
+
+                          if (!snapshot.hasData) {
+                            return const SizedBox();
+                          }
+
+                          final categories = <String>{'All'};
+
+                          for (final doc in snapshot.data!.docs) {
+
+                            final data =
+                            doc.data() as Map<String, dynamic>;
+
+                            final category =
+                            (data['category'] ?? '')
+                                .toString()
+                                .trim();
+
+                            if (category.isNotEmpty) {
+                              categories.add(category);
+                            }
+                          }
+
+                          return DropdownButtonFormField<String>(
+
+                            initialValue: marketplaceCategoryFilter,
+
+                            decoration: InputDecoration(
+                              hintText: 'All Categories',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              isDense: true,
+                            ),
+
+                            items: categories.map((category) {
+
+                              return DropdownMenuItem<String>(
+
+                                value: category,
+
+                                child: Text(
+                                  category == 'All'
+                                      ? 'All Categories'
+                                      : category,
+                                ),
+                              );
+
+                            }).toList(),
+
+                            onChanged: (value) {
+
+                              setState(() {
+
+                                marketplaceCategoryFilter =
+                                    value ?? 'All';
+                              });
+                            },
+                          );
+                        },
+                      ),
+                    ),
                 ],
               ),
             ),
           ),
+          if (_tabController.index == 1)
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
+              child: Center(
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 12,
+                  children: [
+
+                    ChoiceChip(
+                      label: Text(
+                        "Weekly Plan",
+                        style: TextStyle(
+                          color: tiffinType == 'Weekly'
+                              ? Colors.white
+                              : const Color(0xFF001F5B),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      selected: tiffinType == 'Weekly',
+
+                      selectedColor: const Color(0xFFFF6A00),
+                      backgroundColor: Colors.white,
+
+                      onSelected: (_) {
+                        setState(() {
+                          tiffinType = 'Weekly';
+                        });
+                      },
+                    ),
+
+                    ChoiceChip(
+                      label: Text(
+                        "Monthly Plan",
+                        style: TextStyle(
+                          color: tiffinType == 'Monthly'
+                              ? Colors.white
+                              : const Color(0xFF001F5B),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      selected: tiffinType == 'Monthly',
+
+                      selectedColor: const Color(0xFFFF6A00),
+                      backgroundColor: Colors.white,
+
+                      onSelected: (_) {
+                        setState(() {
+                          tiffinType = 'Monthly';
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
+
                 _buildMenuGrid("Regular"),
-                _buildMenuGrid("Weekly Tiffin"),
-                _buildMenuGrid("Monthly Tiffin"),
+
+                _buildMenuGrid(
+                  tiffinType == 'Weekly'
+                      ? "Weekly Tiffin"
+                      : "Monthly Tiffin",
+                ),
+
+                _buildMenuGrid("Marketplace Product"),
               ],
             ),
           ),
@@ -390,52 +688,8 @@ class _FoodPageState extends State<FoodPage>
 
 
   Widget _buildMenuGrid(String serviceType) {
-    Padding(
-      padding: const EdgeInsets.all(12),
-
-      child: Row(
-        children: [
-
-          ChoiceChip(
-            label: const Text('All'),
-            selected: foodFilter == 'All',
-            onSelected: (_) {
-              setState(() {
-                foodFilter = 'All';
-              });
-            },
-          ),
-
-          const SizedBox(width: 10),
-
-          ChoiceChip(
-            label: const Text('Veg'),
-            selected: foodFilter == 'Veg',
-            onSelected: (_) {
-              setState(() {
-                foodFilter = 'Veg';
-              });
-            },
-          ),
-
-          const SizedBox(width: 10),
-
-          ChoiceChip(
-            label: const Text('Non Veg'),
-            selected: foodFilter == 'Non Veg',
-            onSelected: (_) {
-              setState(() {
-                foodFilter = 'Non Veg';
-              });
-            },
-          ),
-        ],
-      ),
-    );
 
     return StreamBuilder<QuerySnapshot>(
-
-
 
       stream: FirebaseFirestore.instance
           .collection('food_menu')
@@ -487,6 +741,9 @@ class _FoodPageState extends State<FoodPage>
           final foodType =
           (data['foodType'] ?? '')
               .toString();
+          final category =
+          (data['category'] ?? '')
+              .toString();
 
           final matchesSearch =
               searchQuery.isEmpty ||
@@ -501,13 +758,26 @@ class _FoodPageState extends State<FoodPage>
 
           final matchesRestaurant =
               selectedRestaurant ==
-                  'All Restaurants' ||
+                  'All Providers' ||
                   restaurantName ==
                       selectedRestaurant;
+          final matchesMarketplaceCategory =
+
+              serviceType !=
+                  "Marketplace Product" ||
+
+                  marketplaceCategoryFilter ==
+                      'All' ||
+
+                  category ==
+                      marketplaceCategoryFilter;
+
+
 
           return matchesSearch &&
               matchesFoodType &&
-              matchesRestaurant;
+              matchesRestaurant &&
+              matchesMarketplaceCategory;
 
         }).toList();
 
@@ -551,8 +821,8 @@ class _FoodPageState extends State<FoodPage>
                     constraints.maxWidth < 600
                         ? 0.65
                         : constraints.maxWidth < 900
-                        ? 0.72
-                        : 0.85,
+                        ? 0.55
+                        : 0.70,
 
                     crossAxisSpacing: 15,
                     mainAxisSpacing: 15,
@@ -571,10 +841,14 @@ class _FoodPageState extends State<FoodPage>
                       data['name'] ?? "Unknown",
                       data['price']?.toString() ?? "0",
                       data['image'] ?? "",
+                      data['image2'] ?? "",
+                      data['image3'] ?? "",
                       data['description'] ?? "",
                       data['restaurantName'] ?? "Restaurant",
                       data['restaurantId'] ?? "",
                       data['discountPercent'] ?? 0,
+                      data['deliveryTime'] ?? '',
+                      serviceType,
                     );
                   },
                 ),
@@ -591,10 +865,14 @@ class _FoodPageState extends State<FoodPage>
       String name,
       String price,
       String imageUrl,
+      String imageUrl2,
+      String imageUrl3,
       String description,
       String restaurantName,
       String restaurantId,
       int itemDiscountPercent,
+      String deliveryTime,
+      String serviceType,
       )
   {
 
@@ -634,6 +912,12 @@ class _FoodPageState extends State<FoodPage>
         final menuPrice =
             double.tryParse(price) ?? 0;
         int actualDiscount = 0;
+        final images = [
+          imageUrl,
+          imageUrl2,
+          imageUrl3,
+        ].where((e) => e.isNotEmpty).toList();
+
 
         if (itemDiscountPercent > 0) {
 
@@ -688,17 +972,151 @@ class _FoodPageState extends State<FoodPage>
                     ),
                     child: Stack(
                       children: [
-
                         SizedBox(
-                          height: 160,
+                          height: MediaQuery.of(context).size.width < 600
+                              ? 220
+                              : 270,
                           width: double.infinity,
-                          child: Image(
-                            image: imageUrl.isNotEmpty
-                                ? NetworkImage(imageUrl)
-                                : const AssetImage(
-                              'assets/images/iserveu_default.png',
-                            ) as ImageProvider,
-                            fit: BoxFit.cover,
+
+                          child: PageView.builder(
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: images.isEmpty ? 1 : images.length,
+
+
+                            itemBuilder: (context, index) {
+
+                              if (images.isEmpty) {
+                                return Image.asset(
+                                  'assets/images/iserveu_default.png',
+                                  fit: BoxFit.cover,
+                                );
+                              }
+
+                              return GestureDetector(
+                                behavior: HitTestBehavior.translucent,
+                                onTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (_) {
+
+                                      final pageController = PageController(
+                                        initialPage: index,
+                                      );
+
+                                      return Dialog(
+                                        backgroundColor: Colors.black,
+                                        insetPadding: EdgeInsets.zero,
+                                        child: Stack(
+                                          children: [
+                                          PageView.builder(
+                                           controller: pageController,
+                                              itemCount: images.length,
+                                              itemBuilder: (context, pageIndex) {
+                                                return InteractiveViewer(
+                                                  panEnabled: false,
+                                                  minScale: 1,
+                                                  maxScale: 4,
+                                                  child: Center(
+                                                    child: Container(
+                                                      color: Colors.white,
+                                                      child: Image.network(
+                                                        images[pageIndex],
+                                                        fit: BoxFit.contain,
+                                                      ),
+                                                    )
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                      Positioned(
+                                        left: 10,
+                                           top: 0,
+                                            bottom: 0,
+                                              child: Center(
+                                               child: IconButton(
+                                                icon: const Icon(
+                                                  Icons.arrow_back_ios,
+                                                    color: Colors.white,
+                                                        size: 40,
+                                                       ),
+                                                         onPressed: () {
+                                                         pageController.previousPage(
+                                                         duration: const Duration(milliseconds: 300),
+                                                        curve: Curves.easeInOut,
+                                                      );
+                                                    },
+                                                   ),
+                                                 ),
+                                                ),
+
+                                              Positioned(
+                                                right: 10,
+                                                    top: 0,
+                                                    bottom: 0,
+                                                       child: Center(
+                                                       child: IconButton(
+                                                  icon: const Icon(
+                                                 Icons.arrow_forward_ios,
+                                                color: Colors.white,
+                                              size: 40,
+                                             ),
+                                            onPressed: () {
+                                           pageController.nextPage(
+                                          duration: const Duration(milliseconds: 300),
+                                          curve: Curves.easeInOut,
+                                          );
+                                         },
+                                        ),
+                                        ),
+                                        ),
+                                            Positioned(
+                                              top: 40,
+                                              right: 20,
+                                              child: IconButton(
+                                                icon: const Icon(
+                                                  Icons.close,
+                                                  color: Colors.white,
+                                                  size: 32,
+                                                ),
+                                                onPressed: () {
+                                                  Navigator.pop(context);
+                                                },
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                                child: Image.network(
+                                  images[index],
+                                  fit: BoxFit.cover,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        Positioned(
+                          right: 8,
+                          bottom: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              "${images.length} Photos",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
 
@@ -746,35 +1164,69 @@ class _FoodPageState extends State<FoodPage>
                       children: [
                         Text(
                           name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
 
                         const SizedBox(height: 8),
+                        if (description.isNotEmpty)
+                          Center(
+                              child: GestureDetector(
+                                onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                  title: Text(name),
+                                  content: SingleChildScrollView(
+                                    child: Text(description),
+                                  ),
+                                ),
+                              );
+                            },
 
-                        Text(
-                          description,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Colors.grey[700],
-                            fontSize: 13,
+                            child: const Text(
+                              "View Details",
+                              style: TextStyle(
+                                color: Colors.blue,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                        ),
+                         ),
 
                         const SizedBox(height: 10),
 
-                        Text(
-                          restaurantName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF0A2540),
-                            fontWeight: FontWeight.w600,
-                          ),
+                        Row(
+                          children: [
+
+                            Expanded(
+                              child: Text(
+                                restaurantName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF0A2540),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+
+                            if (serviceType == "Marketplace Product" &&
+                                deliveryTime.isNotEmpty)
+                              Text(
+                                "🚚 $deliveryTime",
+                                style: const TextStyle(
+                                  color: Colors.green,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                          ],
                         ),
                         if (offerTitle.isNotEmpty)
                           Padding(
@@ -794,10 +1246,7 @@ class _FoodPageState extends State<FoodPage>
                           ),
                         const SizedBox(height: 10),
 
-                        Column(
-                          crossAxisAlignment:
-                          CrossAxisAlignment.start,
-
+                        Row(
                           children: [
 
                             if (actualDiscount > 0)
@@ -805,30 +1254,22 @@ class _FoodPageState extends State<FoodPage>
                                 "₹${menuPrice.toInt()}",
                                 style: const TextStyle(
                                   color: Colors.grey,
-                                  decoration:
-                                  TextDecoration.lineThrough,
+                                  decoration: TextDecoration.lineThrough,
+                                  fontSize: 15,
                                 ),
                               ),
+
+                            if (actualDiscount > 0)
+                              const SizedBox(width: 8),
 
                             Text(
                               "₹${finalPrice.toInt()}",
                               style: const TextStyle(
                                 color: Colors.green,
-                                fontWeight:
-                                FontWeight.bold,
-                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 24,
                               ),
                             ),
-
-                            if (actualDiscount > 0)
-                              Text(
-                                "$actualDiscount% OFF",
-                                style: const TextStyle(
-                                  color: Colors.red,
-                                  fontWeight:
-                                  FontWeight.bold,
-                                ),
-                              ),
                           ],
                         ),
                         const SizedBox(height: 6),
@@ -998,13 +1439,14 @@ class _FoodPageState extends State<FoodPage>
     );
   }
 
+
   void _showCartSheet(
       BuildContext context,
       FoodService cart,
       ) {
 
     final cartSheetContext = context;
-    _loadDefaultAddress();
+
 
     showModalBottomSheet(
 
@@ -1194,6 +1636,50 @@ class _FoodPageState extends State<FoodPage>
 
                       return;
                     }
+                    bool allowCOD = true;
+
+                    try {
+                      final paymentDoc =
+                      await FirebaseFirestore.instance
+                          .collection('app_settings')
+                          .doc('payment')
+                          .get();
+
+                      final paymentData =
+                          paymentDoc.data() ?? {};
+
+                      final globalCOD =
+                          paymentData['allowCOD'] ?? true;
+
+                      bool productCOD = true;
+
+                      for (final item in cart.items.values) {
+
+                        final productDoc =
+                        await FirebaseFirestore.instance
+                            .collection('food_menu')
+                            .doc(item.id)
+                            .get();
+
+                        final productData =
+                            productDoc.data() ?? {};
+
+                        final currentProductCOD =
+                            productData['allowCOD'] ?? true;
+
+                        if (!currentProductCOD) {
+
+                          productCOD = false;
+                          break;
+                        }
+                      }
+
+                      allowCOD =
+                          globalCOD && productCOD;
+
+                    } catch (e) {
+                      debugPrint('COD Config Error: $e');
+                    }
 
                     showModalBottomSheet(
 
@@ -1215,6 +1701,8 @@ class _FoodPageState extends State<FoodPage>
                       builder: (context) {
 
                         return PaymentMethodSheet(
+
+                          allowCOD: allowCOD,
 
                           onOnlinePayment: () async {
 

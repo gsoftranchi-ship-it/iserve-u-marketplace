@@ -403,8 +403,8 @@
 
             _dashboardCard(
               context,
-              title: "Menu",
-              icon: Icons.restaurant_menu,
+              title: "Catalog",
+              icon: Icons.storefront,
               color: Colors.green,
               page:
               const RestaurantMenuPage(),

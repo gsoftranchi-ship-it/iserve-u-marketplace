@@ -4,5 +4,9 @@ import 'dart:html' as html;
 
 void refreshWebPage() {
 
-  html.window.location.reload();
+  final timestamp =
+      DateTime.now().millisecondsSinceEpoch;
+
+  html.window.location.href =
+  '${html.window.location.pathname}?v=$timestamp';
 }

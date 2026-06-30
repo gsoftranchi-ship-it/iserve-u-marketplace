@@ -851,10 +851,10 @@ class _HomePageState extends State<HomePage> {
                 widget.userRole != 'delivery_partner')
 
               _serviceCard(
-                "Food Service",
-                Icons.restaurant,
+                "Food & Store",
+                Icons.local_mall,
                 Colors.orange,
-                "Dining & Pantry",
+                "Food • Tiffin • Marketplace",
                     () => _changePage(2),
               ),
 
@@ -877,8 +877,8 @@ class _HomePageState extends State<HomePage> {
             if (widget.userRole == 'restaurant_partner')
 
               _serviceCard(
-                "Restaurant",
-                Icons.restaurant_menu,
+                "Provider",
+                 Icons.menu,
                 Colors.deepOrange,
                 "Manage Orders & Menu",
                     () => _changePage(2),
@@ -1085,8 +1085,8 @@ class _HomePageState extends State<HomePage> {
           ),
 
           NavigationRailDestination(
-            icon: Icon(Icons.restaurant_menu),
-            label: Text("Restaurant"),
+            icon: Icon(Icons.store),
+            label: Text("Store"),
           ),
 
           NavigationRailDestination(
@@ -1140,8 +1140,8 @@ class _HomePageState extends State<HomePage> {
         ),
 
         NavigationRailDestination(
-          icon: Icon(Icons.restaurant),
-          label: Text("Food"),
+          icon: Icon(Icons.local_mall),
+          label: Text("Store"),
         ),
 
         NavigationRailDestination(
@@ -1176,8 +1176,8 @@ class _HomePageState extends State<HomePage> {
             label: "Orders",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.restaurant_menu),
-            label: "Restaurant",
+            icon: Icon(Icons.store),
+            label: "Store",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
@@ -1225,8 +1225,8 @@ class _HomePageState extends State<HomePage> {
           label: "Ads",
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.restaurant),
-          label: "Food",
+          icon: Icon(Icons.shopping_bag_outlined),
+          label: "Store",
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.receipt_long),

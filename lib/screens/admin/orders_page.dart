@@ -124,25 +124,32 @@ class OrdersPage extends StatelessWidget {
             platformCommission -
             deliveryCharge;
 
-    await FirebaseFirestore.instance
-        .collection('orders')
-        .doc(orderId)
-        .update({
+
+    final Map<String, dynamic> updateData = {
 
       'status': OrderStatus.delivered,
 
-      'deliveredAt':
-      FieldValue.serverTimestamp(),
+      'deliveredAt': FieldValue.serverTimestamp(),
 
-      'platformCommission':
-      platformCommission,
+      'platformCommission': platformCommission,
 
-      'deliveryCharge':
-      deliveryCharge,
+      'deliveryCharge': deliveryCharge,
 
-      'restaurantEarning':
-      restaurantEarning,
-    });
+      'restaurantEarning': restaurantEarning,
+
+    };
+
+// Mark COD as paid after successful PIN verification
+    if (data['paymentMethod'] == 'COD') {
+      updateData['paymentStatus'] = 'PAID';
+    }
+
+
+    await FirebaseFirestore.instance
+        .collection('orders')
+        .doc(orderId)
+        .update(updateData);
+
 
     // Customer
     await NotificationService().createNotification(
@@ -574,7 +581,7 @@ class OrdersPage extends StatelessWidget {
                   break;
 
                 case OrderStatus.rejected:
-                  statusColor = Colors.red;
+                  statusColor = Colors.orangeAccent;
                   break;
 
                 default:
@@ -963,6 +970,8 @@ class OrdersPage extends StatelessWidget {
 
                           children: [
 
+
+
                             // ACCEPT ORDER
                             if (data['status'] == OrderStatus.pending)
 
@@ -1118,6 +1127,8 @@ class OrdersPage extends StatelessWidget {
 
                                                'assignedAt'
                                                :FieldValue.serverTimestamp(),
+                                               'statusUpdatedAt':
+                                                 FieldValue.serverTimestamp(),
                                               });
                                                await NotificationService().createNotification(
 
@@ -1154,13 +1165,13 @@ class OrdersPage extends StatelessWidget {
 
 
                                 icon: const Icon(
-                                  Icons.restaurant,
+                                  Icons.store,
                                   color: Colors.white,
                                 ),
 
                                 label: const Text(
 
-                                  "ASSIGN RESTAURANT",
+                                  "ASSIGN STORE",
 
                                   style: TextStyle(
                                     color: Colors.white,
@@ -1323,7 +1334,7 @@ class OrdersPage extends StatelessWidget {
                                 },
 
                                 icon: const Icon(
-                                  Icons.restaurant,
+                                  Icons.store,
                                   color: Colors.white,
                                 ),
 
@@ -1344,31 +1355,105 @@ class OrdersPage extends StatelessWidget {
 
                                 onPressed: () async {
 
-                                  await updateOrderStatus(
-                                    orderId,
-                                    OrderStatus.rejected,
+                                  final reasons = [
+
+                                    'Out Of Stock',
+
+                                    'Product Unavailable',
+
+                                    'Restaurant Closed',
+
+                                    'Delivery Area Not Serviceable',
+
+                                    'Technical Issue',
+
+                                    'Other',
+                                  ];
+
+                                  final selectedReason =
+                                  await showDialog<String>(
+
+                                    context: context,
+
+                                    builder: (dialogContext) {
+
+                                      return SimpleDialog(
+
+                                        title: const Text(
+                                          'Select Rejection Reason',
+                                        ),
+
+                                        children: reasons.map((reason) {
+
+                                          return SimpleDialogOption(
+
+                                            onPressed: () {
+
+                                              Navigator.pop(
+                                                dialogContext,
+                                                reason,
+                                              );
+                                            },
+
+                                            child: Text(reason),
+                                          );
+
+                                        }).toList(),
+                                      );
+                                    },
                                   );
 
-                                  // CUSTOMER
+                                  if (selectedReason == null) {
+                                    return;
+                                  }
+
+                                  await FirebaseFirestore.instance
+                                      .collection('orders')
+                                      .doc(orderId)
+                                      .update({
+
+                                    'status': OrderStatus.rejected,
+
+                                    'rejectionReason': selectedReason,
+
+                                    'rejectedBy': 'restaurant_partner',
+
+                                    'rejectedAt':
+                                    FieldValue.serverTimestamp(),
+
+                                    'statusUpdatedAt':
+                                    FieldValue.serverTimestamp(),
+                                  });
+
                                   await NotificationService().createNotification(
                                     userId: data['userId'],
                                     title: 'Order Rejected',
-                                    body: 'Restaurant could not process your order.',
+                                    body:
+                                    'Restaurant could not process your order.',
                                     type: 'order',
                                   );
 
-                                  // ADMIN Notification
-                                  final adminDocs = await FirebaseFirestore.instance
+                                  final adminDocs =
+                                  await FirebaseFirestore.instance
                                       .collection('users')
-                                      .where('role', isEqualTo: 'admin')
+                                      .where(
+                                    'role',
+                                    isEqualTo: 'admin',
+                                  )
                                       .get();
 
                                   for (final admin in adminDocs.docs) {
-                                    await NotificationService().createNotification(
+
+                                    await NotificationService()
+                                        .createNotification(
+
                                       userId: admin.id,
+
                                       title: 'Order Rejected',
+
                                       body:
                                       '${data['restaurantName'] ?? 'Restaurant'} rejected Order #$orderId',
+
                                       type: 'order',
                                     );
                                   }
@@ -1437,6 +1522,193 @@ class OrdersPage extends StatelessWidget {
                           ],
                         ),
                       ),
+                    if (userRole == 'restaurant_partner' &&
+                        data['returnRequested'] == true &&
+                        data['returnStatus'] == 'PENDING') ...[
+
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+
+                        child: Container(
+
+                          width: double.infinity,
+
+                          padding: const EdgeInsets.all(16),
+
+                          decoration: BoxDecoration(
+
+                            color: Colors.orange.shade50,
+
+                            borderRadius: BorderRadius.circular(12),
+
+                            border: Border.all(
+                              color: Colors.orange,
+                            ),
+                          ),
+
+                          child: Column(
+
+                            crossAxisAlignment: CrossAxisAlignment.start,
+
+                            children: [
+
+                              Text(
+
+                                data['returnType'] == 'REPLACEMENT'
+                                    ? "REPLACEMENT REQUEST"
+                                    : "RETURN / REFUND REQUEST",
+
+                                style: const TextStyle(
+
+                                  fontWeight: FontWeight.bold,
+
+                                  fontSize: 16,
+
+                                  color: Colors.orange,
+                                ),
+                              ),
+
+                              const SizedBox(height: 12),
+
+                              Text(
+                                "Type : ${data['returnType']}",
+                              ),
+
+                              Text(
+                                "Reason : ${data['returnReason']}",
+                              ),
+
+                              Text(
+                                "Condition : ${data['returnCondition']}",
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              Row(
+
+                                children: [
+
+                                  Expanded(
+
+                                    child: ElevatedButton(
+
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.green,
+                                      ),
+
+                                      onPressed: () async {
+
+                                        await FirebaseFirestore.instance
+                                            .collection('orders')
+                                            .doc(orderId)
+                                            .update({
+
+                                          'returnStatus': 'RESTAURANT_APPROVED',
+
+                                          'restaurantReturnDecisionAt':
+                                          FieldValue.serverTimestamp(),
+                                        });
+
+                                        // CUSTOMER
+                                        await NotificationService().createNotification(
+
+                                          userId: data['userId'],
+
+                                          title:
+                                          data['returnType'] == 'REPLACEMENT'
+                                              ? 'Replacement Approved'
+                                              : 'Return Approved',
+
+                                          body:
+                                          'Restaurant approved your request.',
+
+                                          type: 'order',
+                                        );
+
+                                        // ADMIN
+                                        final adminDocs = await FirebaseFirestore.instance
+                                            .collection('users')
+                                            .where('role', isEqualTo: 'admin')
+                                            .get();
+
+                                        for (final admin in adminDocs.docs) {
+
+                                          await NotificationService().createNotification(
+
+                                            userId: admin.id,
+
+                                            title: 'Restaurant Approved Return',
+
+                                            body:
+                                            '${data['restaurantName']} approved ${data['returnType']}.',
+
+                                            type: 'order',
+                                          );
+                                        }
+                                      },
+
+                                      child: const Text(
+                                        'APPROVE',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(width: 12),
+
+                                  Expanded(
+
+                                    child: ElevatedButton(
+
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                      ),
+
+                                      onPressed: () async {
+
+                                        await FirebaseFirestore.instance
+                                            .collection('orders')
+                                            .doc(orderId)
+                                            .update({
+
+                                          'returnStatus':
+                                          'RESTAURANT_REJECTED',
+
+                                          'restaurantReturnDecisionAt':
+                                          FieldValue.serverTimestamp(),
+                                        });
+
+                                        await NotificationService()
+                                            .createNotification(
+
+                                          userId: data['userId'],
+
+                                          title: 'Return Rejected',
+
+                                          body:
+                                          'Restaurant rejected your return request.',
+
+                                          type: 'order',
+                                        );
+                                      },
+
+                                      child: const Text(
+                                        'REJECT',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                     Padding(
 
                         padding: const EdgeInsets.symmetric(
@@ -1563,7 +1835,7 @@ class OrdersPage extends StatelessWidget {
                                 const SizedBox(height: 8),
 
                                 Text(
-                                  "Restaurant: ${data['restaurantName'] ?? 'Not Assigned'}",
+                                  "Store: ${data['restaurantName'] ?? 'Not Assigned'}",
                                 ),
 
                                 Text(
@@ -2043,11 +2315,21 @@ class OrdersPage extends StatelessWidget {
                           ),
                         ),
                       ),
+                    Text(
+                      "STATUS: ${data['status']}",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue,
+                      ),
+                    ),
+
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 8,
                       ),
+
+
 
                       child: Text(
 
@@ -2061,6 +2343,321 @@ class OrdersPage extends StatelessWidget {
                         ),
                       ),
                     ),
+
+
+                    if (
+                    userRole == 'client' &&
+                        (
+                            // FOOD
+                            (
+                                data['serviceType'] == 'Regular' &&
+                                    (
+                                        data['status'] == OrderStatus.pending ||
+
+                                            (
+                                                data['status'] == OrderStatus.accepted &&
+                                                    data['assignedAt'] != null &&
+                                                    DateTime.now().difference(
+                                                      (data['assignedAt'] as Timestamp).toDate(),
+                                                    ).inMinutes < 2
+                                            )
+                                    )
+                            )
+
+                                ||
+
+                                // MARKETPLACE
+                                (
+                                    data['serviceType'] == 'Marketplace Product' &&
+                                        (
+                                            data['status'] == OrderStatus.pending ||
+                                                data['status'] == OrderStatus.accepted ||
+                                                data['status'] == OrderStatus.preparing
+                                        )
+                                )
+
+                                ||
+
+                                // WEEKLY TIFFIN
+                                (
+                                    data['serviceType'] == 'Weekly Tiffin' &&
+                                        (
+                                            data['status'] == OrderStatus.pending ||
+                                                data['status'] == OrderStatus.accepted
+                                        )
+                                )
+
+                                ||
+
+                                // MONTHLY TIFFIN
+                                (
+                                    data['serviceType'] == 'Monthly Tiffin' &&
+                                        (
+                                            data['status'] == OrderStatus.pending ||
+                                                data['status'] == OrderStatus.accepted
+                                        )
+                                )
+                        )
+                    )
+
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                            ),
+
+                            onPressed: () async {
+
+                              final confirm =
+                              await showDialog<bool>(
+
+                                context: context,
+
+                                builder: (dialogContext) => AlertDialog(
+
+                                  title: const Text(
+                                    'Cancel Order?',
+                                  ),
+
+                                  content: const Text(
+                                    'Are you sure you want to cancel this order?',
+                                  ),
+
+                                  actions: [
+
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(dialogContext, false),
+                                      child: const Text('No'),
+                                    ),
+
+                                    ElevatedButton(
+                                      onPressed: () =>
+                                          Navigator.pop(dialogContext, true),
+                                      child: const Text('Yes'),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirm != true) return;
+
+                              await FirebaseFirestore.instance
+                                  .collection('orders')
+                                  .doc(orderId)
+                                  .update({
+
+                                'status': 'CANCELLED',
+
+                                'rejectedBy': 'customer',
+
+                                'rejectionReason':
+                                'Cancelled by Customer',
+
+                                'rejectedAt':
+                                FieldValue.serverTimestamp(),
+
+                                'statusUpdatedAt':
+                                FieldValue.serverTimestamp(),
+                              });
+
+                              final restaurantId =
+                              data['restaurantId'];
+
+                              if (restaurantId != null &&
+                                  restaurantId.toString().isNotEmpty) {
+
+                                await NotificationService()
+                                    .createNotification(
+
+                                  userId: restaurantId,
+
+                                  title: 'Order Cancelled',
+
+                                  body: 'Customer cancelled the order.',
+
+                                  type: 'order',
+                                );
+                              }
+                            },
+
+                            icon: const Icon(
+                              Icons.cancel,
+                              color: Colors.white,
+                            ),
+
+                            label: const Text(
+                              'CANCEL ORDER',
+                              style: TextStyle(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    if (
+                    userRole == 'client' &&
+                        data['serviceType'] == 'Marketplace Product' &&
+                        data['status'] == OrderStatus.delivered &&
+                        (data['returnRequested'] != true)
+                    )
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.deepOrange,
+                            ),
+                            icon: const Icon(
+                              Icons.assignment_return,
+                              color: Colors.white,
+                            ),
+                            label: const Text(
+                              "RETURN / REFUND",
+                              style: TextStyle(
+                                color: Colors.white,
+                              ),
+                            ),
+                            onPressed: () async {
+
+                              final reasons = [
+
+                                'Damaged Product',
+
+                                'Wrong Product',
+
+                                'Missing Item',
+
+                                'Quality Issue',
+
+                                'Expired Product',
+
+                                'Other',
+
+                              ];
+
+                              final selectedReason =
+                              await showDialog<String>(
+
+                                context: context,
+
+                                builder: (dialogContext) {
+
+                                  return SimpleDialog(
+
+                                    title: const Text(
+                                      'Select Return Reason',
+                                    ),
+
+                                    children: reasons.map((reason) {
+
+                                      return SimpleDialogOption(
+
+                                        onPressed: () {
+
+                                          Navigator.pop(
+                                            dialogContext,
+                                            reason,
+                                          );
+
+                                        },
+
+                                        child: Text(reason),
+                                      );
+
+                                    }).toList(),
+                                  );
+
+                                },
+
+                              );
+
+                              if (selectedReason == null) return;
+
+                              final returnType =
+                              data['returnPolicy'] == 'Replacement Only'
+                                  ? 'REPLACEMENT'
+                                  : 'REFUND';
+
+                              await FirebaseFirestore.instance
+                                  .collection('orders')
+                                  .doc(orderId)
+                                  .update({
+
+                                'returnRequested': true,
+
+                                'returnRequestedAt': FieldValue.serverTimestamp(),
+
+                                'returnReason': selectedReason,
+
+                                'returnType': returnType,
+
+                                'returnStatus': 'PENDING',
+
+                              });
+                              // Notify Restaurant
+                              if (data['restaurantId'] != null &&
+                                  data['restaurantId'].toString().isNotEmpty) {
+
+                                await NotificationService().createNotification(
+
+                                  userId: data['restaurantId'],
+
+                                  title: data['returnType'] == 'REPLACEMENT'
+                                      ? 'Replacement Request'
+                                      : 'Return Request',
+
+                                  body:
+                                  '${data['customerName']} submitted a ${data['returnType']?.toLowerCase()} request.',
+
+                                  type: 'order',
+                                );
+                              }
+
+                              // Notify Admin
+                              final adminDocs = await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .where('role', isEqualTo: 'admin')
+                                  .get();
+
+                              for (final admin in adminDocs.docs) {
+
+                                await NotificationService().createNotification(
+
+                                  userId: admin.id,
+
+                                  title: 'New Return Request',
+
+                                  body:
+                                  '${data['customerName']} submitted a ${data['returnType']?.toLowerCase()} request.',
+
+                                  type: 'order',
+                                );
+                              }
+
+                              if (!context.mounted) return;
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+
+                                const SnackBar(
+
+                                  content: Text(
+                                    'Return request submitted.',
+                                  ),
+
+                                ),
+
+                              );
+                            },
+                          ),
+                        ),
+                      ),
 
                     // ======================================================
                     // ORDER ITEMS

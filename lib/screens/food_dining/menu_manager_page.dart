@@ -1,11 +1,14 @@
 import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../screens/food_dining/image_optimizer_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
+
 class MenuManagerPage extends StatefulWidget {
   const MenuManagerPage({super.key});
 
@@ -14,6 +17,24 @@ class MenuManagerPage extends StatefulWidget {
 }
 
 class _MenuManagerPageState extends State<MenuManagerPage> {
+  static const List<String> marketplaceCategories = [
+
+    "🛒 Daily Needs",
+    "💊 Health & Wellness",
+    "👗 Fashion & Lifestyle",
+    "💄 Beauty",
+    "🎉 Festival & Gifts",
+    "🏠 Home & Kitchen",
+    "📱 Electronics",
+    "📚 Education & Office",
+    "🚗 Automobile",
+    "⚽ Sports & Hobby",
+    "🐾 Pets & Agriculture",
+    "🎨 Handmade & Local",
+    "🏪 Business Supplies",
+    "📦 Others",
+
+  ];
 
   // 🔥 IMAGE PICKER
   final ImagePicker _picker = ImagePicker();
@@ -25,7 +46,7 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
 
       appBar: AppBar(
         title: const Text(
-          "Restaurant Menu Manager",
+          "Store Item Manager",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: const Color(0xFF0A2540),
@@ -116,11 +137,21 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
 
                             child: imageUrl.isNotEmpty
 
-                                ? Image.network(
-                              imageUrl,
+                                ? CachedNetworkImage(
+                              imageUrl: imageUrl,
                               width: 70,
                               height: 70,
                               fit: BoxFit.cover,
+
+                              placeholder: (context, url) =>
+                              const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+
+                              errorWidget: (context, url, error) =>
+                              const Icon(Icons.image_not_supported),
                             )
 
                                 : Container(
@@ -361,7 +392,7 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
             _showAddItemDialog(context),
 
         icon: const Icon(Icons.add),
-        label: const Text("Add Food Item"),
+        label: const Text("Add Item"),
       ),
     );
   }
@@ -389,7 +420,26 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
     String selectedCategory = "Lunch";
     String selectedFoodType = "Veg";
     String selectedServiceType = "Regular";
+    String selectedMarketplaceCategory =
+        marketplaceCategories.first;
+    String selectedDeliveryTime = '1-2 Days';
+    String selectedReturnPolicy = 'No Return';
+
+    int selectedReturnDays = 0;
+
+    String selectedReturnCondition = 'Sealed Pack Only';
+    final deliveryTimeOptions = [
+      '30 Minutes',
+      '1 Hour',
+      '2 Hours',
+      'Same Day',
+      '1-2 Days',
+      '3-5 Days',
+      '7 Days',
+    ];
     XFile? pickedImage;
+    XFile? pickedImage2;
+    XFile? pickedImage3;
 
     bool isUploading = false;
 
@@ -433,6 +483,20 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
 
                 return;
               }
+              final price = double.tryParse(
+                priceController.text.trim(),
+              );
+
+              if (price == null || price <= 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      "Please enter valid price",
+                    ),
+                  ),
+                );
+                return;
+              }
 
               setStateDialog(() {
                 isUploading = true;
@@ -441,6 +505,8 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
               try {
 
                 String imageUrl = "";
+                String imageUrl2 = "";
+                String imageUrl3 = "";
 
                 // ==================================================
                 // 🔥 UPLOAD IMAGE
@@ -477,18 +543,117 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
 
                   } else {
 
-                    await storageRef.putFile(
-
+                    final optimizedFile =
+                    await ImageOptimizerService
+                        .convertToStandardWebP(
                       File(pickedImage!.path),
-
-                      SettableMetadata(
-                        contentType: 'image/jpeg',
-                      ),
                     );
+
+                    if (optimizedFile != null) {
+                      await storageRef.putFile(
+                        optimizedFile,
+                        SettableMetadata(
+                          contentType: 'image/jpeg',
+                        ),
+                      );
+                    }
                   }
                   imageUrl =
                   await storageRef
                       .getDownloadURL();
+                }
+                // IMAGE 2
+                if (pickedImage2 != null) {
+
+                  String fileName =
+                      "${DateTime.now().millisecondsSinceEpoch}_2";
+
+                  Reference storageRef =
+                  FirebaseStorage.instance
+                      .ref()
+                      .child(
+                    'food_images/$fileName.jpg',
+                  );
+
+                  if (kIsWeb) {
+
+                    Uint8List bytes =
+                    await pickedImage2!.readAsBytes();
+
+                    await storageRef.putData(
+                      bytes,
+                      SettableMetadata(
+                        contentType: 'image/jpg',
+                      ),
+                    );
+
+                  } else {
+
+                    final optimizedFile =
+                    await ImageOptimizerService
+                        .convertToStandardWebP(
+                      File(pickedImage2!.path),
+                    );
+
+                    if (optimizedFile != null) {
+                      await storageRef.putFile(
+                        optimizedFile,
+                        SettableMetadata(
+                          contentType: 'image/jpeg',
+                        ),
+                      );
+                    }
+                  }
+
+                  imageUrl2 =
+                  await storageRef.getDownloadURL();
+                }
+
+// IMAGE 3
+                if (pickedImage3 != null) {
+
+                  String fileName =
+                      "${DateTime.now().millisecondsSinceEpoch}_3";
+
+                  Reference storageRef =
+                  FirebaseStorage.instance
+                      .ref()
+                      .child(
+                    'food_images/$fileName.jpg',
+                  );
+
+                  if (kIsWeb) {
+
+                    Uint8List bytes =
+                    await pickedImage3!.readAsBytes();
+
+                    await storageRef.putData(
+                      bytes,
+                      SettableMetadata(
+                        contentType: 'image/jpeg',
+                      ),
+                    );
+
+                  } else {
+
+                    final optimizedFile =
+                    await ImageOptimizerService
+                        .convertToStandardWebP(
+                      File(pickedImage3!.path),
+                    );
+
+                    if (optimizedFile != null) {
+                      await storageRef.putFile(
+                        optimizedFile,
+                        SettableMetadata(
+                          contentType: 'image/jpeg',
+                        ),
+                      );
+                    }
+                  }
+
+                  imageUrl3 =
+                  await storageRef.getDownloadURL();
                 }
                 final profileDoc =
                 await FirebaseFirestore.instance
@@ -523,22 +688,37 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
                   "description":
                   descriptionController.text.trim(),
 
-                  "price": double.parse(
-                    priceController.text.trim(),
-                  ),
+                  "price": price,
+
                   "discountPercent": int.tryParse(
                     discountController.text.trim(),
                   ) ?? 0,
 
-                  "category": selectedCategory,
+                  "category": selectedServiceType == "Marketplace Product"
+                      ? selectedMarketplaceCategory
+                      : selectedCategory,
 
                   "foodType": selectedFoodType,
 
                   "serviceType": selectedServiceType,
 
+                  "deliveryTime":
+                  selectedServiceType == "Marketplace Product"
+                      ? selectedDeliveryTime
+                      : "",
+                  "returnPolicy": selectedReturnPolicy,
+
+                  "returnDays": selectedReturnDays,
+
+                  "returnCondition": selectedReturnCondition,
+
                   "available": true,
 
+                  "allowCOD": true,
+
                   "image": imageUrl,
+                  "image2": imageUrl2,
+                  "image3": imageUrl3,
 
                   "createdAt":
                   FieldValue.serverTimestamp(),
@@ -580,13 +760,14 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
             // ==================================================
 
             return AlertDialog(
+              contentPadding: const EdgeInsets.all(16),
               shape: RoundedRectangleBorder(
                 borderRadius:
                 BorderRadius.circular(16),
               ),
 
               title: const Text(
-                "Add New Menu Item",
+                "Add New Item",
               ),
 
               content: SingleChildScrollView(
@@ -682,12 +863,65 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
                             SizedBox(height: 8),
 
                             Text(
-                              "Add Food Photo",
+                              "Add Item Photo",
                             ),
                           ],
                         ),
                       ),
                     ),
+                    if (selectedServiceType == "Marketplace Product") ...[
+
+                      const SizedBox(height: 12),
+
+                      Row(
+                        children: [
+
+                          Expanded(
+                            child: _buildMarketplaceImageBox(
+                              "Image 2",
+                              pickedImage2,
+                                  () async {
+
+                                final image =
+                                await _picker.pickImage(
+                                  source: ImageSource.gallery,
+                                  imageQuality: 75,
+                                );
+
+                                if (image != null) {
+                                  setStateDialog(() {
+                                    pickedImage2 = image;
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+
+                          const SizedBox(width: 10),
+
+                          Expanded(
+                            child: _buildMarketplaceImageBox(
+                              "Image 3",
+                              pickedImage3,
+                                  () async {
+
+                                final image =
+                                await _picker.pickImage(
+                                  source: ImageSource.gallery,
+                                  imageQuality: 75,
+                                );
+
+                                if (image != null) {
+                                  setStateDialog(() {
+                                    pickedImage3 = image;
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
 
                     const SizedBox(height: 20),
 
@@ -760,7 +994,8 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
 
                     // ✅ CATEGORY
                     DropdownButtonFormField<String>(
-                      initialValue: selectedCategory,
+                      isExpanded: true,
+                        initialValue: selectedCategory,
 
                       decoration:
                       const InputDecoration(
@@ -776,7 +1011,10 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
                         "Juices",
                         "Beverages",
                         "Desserts",
-                        "Tiffin"
+                        "Tiffin",
+                        "iServe-U Marketplace",
+
+
                       ]
                           .map(
                             (e) => DropdownMenuItem(
@@ -786,16 +1024,248 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
                       )
                           .toList(),
 
-                      onChanged: (value) {
-                        setStateDialog(() {
-                          selectedCategory = value!;
-                        });
-                      },
+                        onChanged: (value) {
+                          setStateDialog(() {
+
+                            if (selectedServiceType == "Marketplace Product") {
+                              selectedMarketplaceCategory = value!;
+                            } else {
+                              selectedCategory = value!;
+                            }
+
+                          });
+                        }
                     ),
+
+                    if (selectedServiceType == "Marketplace Product") ...[
+
+                      const SizedBox(height: 15),
+
+                      DropdownButtonFormField<String>(
+                        isExpanded: true,
+
+                        initialValue: selectedMarketplaceCategory,
+
+                        decoration: const InputDecoration(
+                          labelText: "Marketplace Category",
+                          border: OutlineInputBorder(),
+                        ),
+
+                        items: marketplaceCategories.map((e) {
+
+                          return DropdownMenuItem<String>(
+                            value: e,
+                            child: Text(e),
+                          );
+
+                        }).toList(),
+
+                        onChanged: (value) {
+
+                          setStateDialog(() {
+
+                            selectedMarketplaceCategory = value!;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 15),
+
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedDeliveryTime,
+
+                        decoration: const InputDecoration(
+                          labelText: "Delivery Time",
+                          border: OutlineInputBorder(),
+                        ),
+
+                        items: deliveryTimeOptions.map((e) {
+
+                          return DropdownMenuItem<String>(
+                            value: e,
+                            child: Text(e),
+                          );
+
+                        }).toList(),
+
+                        onChanged: (value) {
+
+                          setStateDialog(() {
+
+                            selectedDeliveryTime =
+                                value ?? '1-2 Days';
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedReturnPolicy,
+                        decoration: const InputDecoration(
+                          labelText: "Return Policy",
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+
+                          DropdownMenuItem(
+                            value: "No Return",
+                            child: Text("No Return"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: "Replacement Only",
+                            child: Text("Replacement Only"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: "Return & Refund",
+                            child: Text("Return & Refund"),
+                          ),
+
+                        ],
+                        onChanged: (value) {
+
+                          setStateDialog(() {
+
+                            selectedReturnPolicy = value!;
+
+                          });
+
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      DropdownButtonFormField<int>(
+                        initialValue: selectedReturnDays,
+                        decoration: const InputDecoration(
+                          labelText: "Return Window",
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+
+                          DropdownMenuItem(
+                            value: 0,
+                            child: Text("0 Days"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 3,
+                            child: Text("3 Days"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 7,
+                            child: Text("7 Days"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 10,
+                            child: Text("10 Days"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 15,
+                            child: Text("15 Days"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 30,
+                            child: Text("30 Days"),
+                          ),
+
+                        ],
+                        onChanged: (value) {
+
+                          setStateDialog(() {
+
+                            selectedReturnDays = value!;
+
+                          });
+
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedReturnCondition,
+                        decoration: const InputDecoration(
+                          labelText: "Return Condition",
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+
+                          DropdownMenuItem(
+                            value: "Sealed Pack Only",
+                            child: Text("Sealed Pack Only"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: "Unused Only",
+                            child: Text("Unused Only"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: "Original Packaging Required",
+                            child: Text("Original Packaging Required"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: "Any Condition",
+                            child: Text("Any Condition"),
+                          ),
+
+                        ],
+                        onChanged: (value) {
+
+                          setStateDialog(() {
+
+                            selectedReturnCondition = value!;
+
+                          });
+
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+
+
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.orange.shade200,
+                          ),
+                        ),
+
+                        child: const Row(
+                          children: [
+
+                            Icon(
+                              Icons.shopping_bag_outlined,
+                              color: Colors.orange,
+                            ),
+
+                            SizedBox(width: 10),
+
+                            Expanded(
+                              child: Text(
+                                "Marketplace products support multiple images and zoom view.",
+                                style: TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 15),
 
                     DropdownButtonFormField<String>(
-
+                      isExpanded: true,
                       initialValue: selectedFoodType,
 
                       decoration: const InputDecoration(
@@ -814,6 +1284,11 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
                           value: "Non Veg",
                           child: Text("Non Veg"),
                         ),
+
+                        DropdownMenuItem(
+                          value: "Product",
+                          child: Text("Product"),
+                        ),
                       ],
 
                       onChanged: (value) {
@@ -828,7 +1303,7 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
                     const SizedBox(height: 15),
 
                     DropdownButtonFormField<String>(
-
+                      isExpanded: true,
                       initialValue: selectedServiceType,
 
                       decoration: const InputDecoration(
@@ -851,6 +1326,14 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
                         DropdownMenuItem(
                           value: "Monthly Tiffin",
                           child: Text("Monthly Tiffin"),
+                        ),
+
+                        DropdownMenuItem(
+                          value: "Marketplace Product",
+                          child: Text(
+                            "Marketplace",
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
 
@@ -932,17 +1415,42 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
     String selectedCategory =
         item['category'] ?? 'Lunch';
 
+    String selectedMarketplaceCategory =
+    marketplaceCategories.contains(item['category'])
+        ? item['category']
+        : marketplaceCategories.first;
+
+    if (item['serviceType'] == "Marketplace Product" &&
+        !marketplaceCategories.contains(item['category'])) {
+      selectedMarketplaceCategory =
+          marketplaceCategories.first;
+    }
+
+
     String selectedFoodType =
         item['foodType'] ?? 'Veg';
 
     String selectedServiceType =
         item['serviceType'] ?? 'Regular';
 
+    String selectedDeliveryTime =
+        item['deliveryTime'] ?? '1-2 Days';
+    String selectedReturnPolicy =
+        item['returnPolicy'] ?? 'No Return';
+
+    int selectedReturnDays =
+        item['returnDays'] ?? 0;
+
+    String selectedReturnCondition =
+        item['returnCondition'] ??
+            'Sealed Pack Only';
+
     showDialog(
       context: context,
       builder: (_) {
 
         return AlertDialog(
+          contentPadding: const EdgeInsets.all(16),
 
           title: const Text(
             "Edit Menu Item",
@@ -961,9 +1469,7 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
 
                     TextField(
                       controller: nameController,
-
-                      decoration:
-                      const InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: "Item Name",
                       ),
                     ),
@@ -994,17 +1500,21 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
                     const SizedBox(height: 12),
 
                     DropdownButtonFormField<String>(
+                      isExpanded: true,
 
                       initialValue:
-                      selectedCategory,
+                      selectedServiceType == "Marketplace Product"
+                          ? selectedMarketplaceCategory
+                          : selectedCategory,
 
                       decoration:
                       const InputDecoration(
                         labelText: "Category",
                       ),
 
-                      items: [
-
+                      items: (selectedServiceType == "Marketplace Product"
+                          ? marketplaceCategories
+                          : [
                         "Breakfast",
                         "Lunch",
                         "Dinner",
@@ -1013,22 +1523,27 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
                         "Beverages",
                         "Desserts",
                         "Tiffin",
-
-                      ].map((e) {
-
-                        return DropdownMenuItem(
+                        "iServe-U Marketplace",
+                      ])
+                          .map(
+                            (e) => DropdownMenuItem<String>(
                           value: e,
                           child: Text(e),
-                        );
-
-                      }).toList(),
-
+                        ),
+                      )
+                          .toList(),
                       onChanged: (value) {
 
                         setStateDialog(() {
 
-                          selectedCategory =
-                          value!;
+                          if (selectedServiceType == "Marketplace Product") {
+
+                            selectedMarketplaceCategory = value!;
+
+                          } else {
+
+                            selectedCategory = value!;
+                          }
                         });
                       },
                     ),
@@ -1057,6 +1572,11 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
                           value: "Non Veg",
                           child: Text("Non Veg"),
                         ),
+
+                        DropdownMenuItem(
+                          value: "Product",
+                          child: Text("Product"),
+                        ),
                       ],
 
                       onChanged: (value) {
@@ -1075,7 +1595,6 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
 
                       initialValue:
                       selectedServiceType,
-
                       decoration:
                       const InputDecoration(
                         labelText:
@@ -1086,22 +1605,24 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
 
                         DropdownMenuItem(
                           value: "Regular",
-                          child: Text(
-                            "Regular Food",
-                          ),
+                          child: Text("Regular Food"),
                         ),
 
                         DropdownMenuItem(
                           value: "Weekly Tiffin",
-                          child: Text(
-                            "Weekly Tiffin",
-                          ),
+                          child: Text("Weekly Tiffin"),
                         ),
 
                         DropdownMenuItem(
                           value: "Monthly Tiffin",
+                          child: Text("Monthly Tiffin"),
+                        ),
+
+                        DropdownMenuItem(
+                          value: "Marketplace Product",
                           child: Text(
-                            "Monthly Tiffin",
+                            "Marketplace",
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -1115,6 +1636,205 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
                         });
                       },
                     ),
+                    if (selectedServiceType == "Marketplace Product") ...[
+
+                      const SizedBox(height: 12),
+
+                      DropdownButtonFormField<String>(
+
+                        initialValue: selectedDeliveryTime,
+
+                        decoration: const InputDecoration(
+                          labelText: "Delivery Time",
+                        ),
+
+                        items: const [
+
+                          DropdownMenuItem(
+                            value: "30 Minutes",
+                            child: Text("30 Minutes"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: "1 Hour",
+                            child: Text("1 Hour"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: "2 Hours",
+                            child: Text("2 Hours"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: "Same Day",
+                            child: Text("Same Day"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: "1-2 Days",
+                            child: Text("1-2 Days"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: "3-5 Days",
+                            child: Text("3-5 Days"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: "7 Days",
+                            child: Text("7 Days"),
+                          ),
+                        ],
+
+                        onChanged: (value) {
+
+                          setStateDialog(() {
+
+                            selectedDeliveryTime =
+                            value!;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+
+                      DropdownButtonFormField<String>(
+
+                        initialValue: selectedReturnPolicy,
+
+                        decoration: const InputDecoration(
+                          labelText: "Return Policy",
+                        ),
+
+                        items: const [
+
+                          DropdownMenuItem(
+                            value: "No Return",
+                            child: Text("No Return"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: "Replacement Only",
+                            child: Text("Replacement Only"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: "Return & Refund",
+                            child: Text("Return & Refund"),
+                          ),
+
+                        ],
+
+                        onChanged: (value) {
+
+                          setStateDialog(() {
+
+                            selectedReturnPolicy = value!;
+
+                          });
+
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      DropdownButtonFormField<int>(
+
+                        initialValue: selectedReturnDays,
+
+                        decoration: const InputDecoration(
+                          labelText: "Return Window",
+                        ),
+
+                        items: const [
+
+                          DropdownMenuItem(
+                            value: 0,
+                            child: Text("0 Days"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 3,
+                            child: Text("3 Days"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 7,
+                            child: Text("7 Days"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 10,
+                            child: Text("10 Days"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 15,
+                            child: Text("15 Days"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 30,
+                            child: Text("30 Days"),
+                          ),
+
+                        ],
+
+                        onChanged: (value) {
+
+                          setStateDialog(() {
+
+                            selectedReturnDays = value!;
+
+                          });
+
+                        },
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      DropdownButtonFormField<String>(
+
+                        initialValue: selectedReturnCondition,
+
+                        decoration: const InputDecoration(
+                          labelText: "Return Condition",
+                        ),
+
+                        items: const [
+
+                          DropdownMenuItem(
+                            value: "Sealed Pack Only",
+                            child: Text("Sealed Pack Only"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: "Unused Only",
+                            child: Text("Unused Only"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: "Original Packaging Required",
+                            child: Text("Original Packaging Required"),
+                          ),
+
+                          DropdownMenuItem(
+                            value: "Any Condition",
+                            child: Text("Any Condition"),
+                          ),
+
+                        ],
+
+                        onChanged: (value) {
+
+                          setStateDialog(() {
+
+                            selectedReturnCondition = value!;
+
+                          });
+
+                        },
+                      ),
+                    ],
 
                     const SizedBox(height: 12),
 
@@ -1169,6 +1889,23 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
             ElevatedButton(
 
               onPressed: () async {
+                final price = double.tryParse(
+                  priceController.text.trim(),
+                );
+
+                if (price == null || price <= 0) {
+
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        "Enter valid price",
+                      ),
+                    ),
+                  );
+
+                  return;
+                }
 
                 await item.reference.update({
 
@@ -1179,7 +1916,9 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
                   descriptionController.text.trim(),
 
                   'category':
-                  selectedCategory,
+                  selectedServiceType == "Marketplace Product"
+                      ? selectedMarketplaceCategory
+                      : selectedCategory,
 
                   'foodType':
                   selectedFoodType,
@@ -1187,10 +1926,21 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
                   'serviceType':
                   selectedServiceType,
 
-                  'price':
-                  double.parse(
-                    priceController.text.trim(),
-                  ),
+                  'deliveryTime':
+                  selectedServiceType == "Marketplace Product"
+                      ? selectedDeliveryTime
+                      : '',
+                  'returnPolicy':
+                  selectedReturnPolicy,
+
+                  'returnDays':
+                  selectedReturnDays,
+
+                  'returnCondition':
+                  selectedReturnCondition,
+
+                  'price': price,
+
                   'discountPercent':
                   int.tryParse(
                     discountController.text.trim(),
@@ -1213,6 +1963,67 @@ class _MenuManagerPageState extends State<MenuManagerPage> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildMarketplaceImageBox(
+      String title,
+      XFile? image,
+      VoidCallback onTap,
+      ) {
+    return GestureDetector(
+      onTap: onTap,
+
+      child: Container(
+        height: 90,
+
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Colors.grey.shade300,
+          ),
+          borderRadius:
+          BorderRadius.circular(10),
+        ),
+
+        child: image == null
+
+            ? Center(
+          child: Text(title),
+        )
+
+            : ClipRRect(
+          borderRadius:
+          BorderRadius.circular(10),
+
+          child: kIsWeb
+
+              ? FutureBuilder<Uint8List>(
+            future:
+            image.readAsBytes(),
+
+            builder:
+                (context, snapshot) {
+
+              if (!snapshot.hasData) {
+                return const Center(
+                  child:
+                  CircularProgressIndicator(),
+                );
+              }
+
+              return Image.memory(
+                snapshot.data!,
+                fit: BoxFit.cover,
+              );
+            },
+          )
+
+              : Image.file(
+            File(image.path),
+            fit: BoxFit.cover,
+          ),
+        ),
+      ),
     );
   }
 }

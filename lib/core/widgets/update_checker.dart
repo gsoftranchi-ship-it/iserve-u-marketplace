@@ -6,7 +6,7 @@ import '../utils/web_refresh.dart';
 class UpdateChecker {
 
   static const String currentVersion =
-      '1.0.2';
+      '1.0.4';
 
   static Future<void> checkForUpdates(
       BuildContext context) async {
@@ -69,7 +69,7 @@ class UpdateChecker {
 
                 child: Text(
                   kIsWeb
-                      ? 'Refresh Now'
+                      ? 'Update Now'
                       : 'Re-download App',
                 ),
               ),

@@ -199,7 +199,7 @@ class _PartnerApplicationPageState
                   SizedBox(height: 8),
 
                   Text(
-                    '🍽  List your restaurant, receive orders and grow your business with iServe-U.',
+                    ' List your business, receive orders and grow your business with iServe-U.',
                   ),
                 ],
               ),
@@ -259,11 +259,11 @@ class _PartnerApplicationPageState
                 },
 
                 icon: const Icon(
-                  Icons.restaurant,
+                  Icons.storefront,
                 ),
 
                 label: const Text(
-                  'Apply as Restaurant Partner',
+                  'Apply as Provider',
                 ),
               ),
             ),

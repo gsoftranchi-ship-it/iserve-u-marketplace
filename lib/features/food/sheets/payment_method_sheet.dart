@@ -9,6 +9,8 @@ class PaymentMethodSheet
   final VoidCallback
   onCashOnDelivery;
 
+  final bool allowCOD;
+
   const PaymentMethodSheet({
 
     super.key,
@@ -16,6 +18,8 @@ class PaymentMethodSheet
     required this.onOnlinePayment,
 
     required this.onCashOnDelivery,
+
+    required this.allowCOD,
   });
 
   @override
@@ -98,61 +102,64 @@ class PaymentMethodSheet
             ),
           ),
 
-          const SizedBox(height: 16),
+          if (allowCOD) ...[
 
-          SizedBox(
+            const SizedBox(height: 16),
 
-            width: double.infinity,
+            SizedBox(
 
-            height: 55,
+              width: double.infinity,
 
-            child:
-            OutlinedButton.icon(
+              height: 55,
 
-              style:
-              OutlinedButton.styleFrom(
+              child:
+              OutlinedButton.icon(
 
-                side:
-                const BorderSide(
-                  color:
-                  Colors.orange,
+                style:
+                OutlinedButton.styleFrom(
+
+                  side:
+                  const BorderSide(
+                    color:
+                    Colors.orange,
+                  ),
+
+                  shape:
+                  RoundedRectangleBorder(
+
+                    borderRadius:
+                    BorderRadius.circular(
+                        14),
+                  ),
                 ),
 
-                shape:
-                RoundedRectangleBorder(
+                onPressed:
+                onCashOnDelivery,
 
-                  borderRadius:
-                  BorderRadius.circular(
-                      14),
+                icon: const Icon(
+
+                  Icons.payments_outlined,
+
+                  color: Colors.orange,
                 ),
-              ),
 
-              onPressed:
-              onCashOnDelivery,
+                label: const Text(
 
-              icon: const Icon(
+                  "Cash on Delivery",
 
-                Icons
-                    .payments_outlined,
+                  style: TextStyle(
 
-                color: Colors.orange,
-              ),
+                    color:
+                    Colors.orange,
 
-              label: const Text(
-
-                "Cash on Delivery",
-
-                style: TextStyle(
-
-                  color:
-                  Colors.orange,
-
-                  fontWeight:
-                  FontWeight.bold,
+                    fontWeight:
+                    FontWeight.bold,
+                  ),
                 ),
               ),
             ),
-          ),
+
+          ],
         ],
       ),
     );

@@ -9,6 +9,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_auth
   firebase_core
   firebase_storage
+  flutter_avif_windows
   geolocator_windows
   media_kit_libs_windows_video
   media_kit_video

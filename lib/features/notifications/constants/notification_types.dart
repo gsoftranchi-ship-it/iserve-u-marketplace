@@ -28,4 +28,27 @@ class NotificationTypes {
 
   static const String partnerApplication =
       'partnerApplication';
+  static const String returnRequested =
+      'returnRequested';
+
+  static const String returnApproved =
+      'returnApproved';
+
+  static const String returnRejected =
+      'returnRejected';
+
+  static const String replacementRequested =
+      'replacementRequested';
+
+  static const String replacementApproved =
+      'replacementApproved';
+
+  static const String replacementRejected =
+      'replacementRejected';
+
+  static const String refundApproved =
+      'refundApproved';
+
+  static const String refundCompleted =
+      'refundCompleted';
 }

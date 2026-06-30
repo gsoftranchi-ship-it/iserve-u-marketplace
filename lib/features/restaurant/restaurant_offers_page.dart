@@ -19,7 +19,7 @@ class RestaurantOffersPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Restaurant Offers'),
+        title: const Text('Our Offers'),
       ),
 
       floatingActionButton: FloatingActionButton.extended(

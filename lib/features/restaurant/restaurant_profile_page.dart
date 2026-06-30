@@ -274,7 +274,7 @@ class _RestaurantProfilePageState
 
       appBar: AppBar(
         title:
-        const Text('Restaurant Profile'),
+        const Text('Our Profile'),
       ),
 
       body: SingleChildScrollView(
@@ -308,7 +308,7 @@ class _RestaurantProfilePageState
               const SizedBox(height: 20),
 
               _field(
-                'Restaurant Name',
+                'Store Name',
                 restaurantNameController,
               ),
 
@@ -378,7 +378,7 @@ class _RestaurantProfilePageState
 
                   label: Text(
                     latitude == null
-                        ? 'CAPTURE RESTAURANT LOCATION'
+                        ? 'CAPTURE LOCATION'
                         : 'LOCATION CAPTURED',
                   ),
 

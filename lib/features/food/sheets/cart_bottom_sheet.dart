@@ -166,33 +166,91 @@ class CartBottomSheet
                     cart.items.values
                         .toList()[i];
 
-                    return ListTile(
-
-                      title: Text(
-
-                        item.name,
-
-                        style:
-                        const TextStyle(
-                          fontWeight:
-                          FontWeight
-                              .bold,
-                        ),
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        vertical: 4,
                       ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Row(
+                          children: [
 
-                      subtitle: Text(
-                        "₹${item.price} x ${item.quantity}",
-                      ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                                children: [
 
-                      trailing: Text(
+                                  Text(
+                                    item.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
 
-                        "₹${item.price * item.quantity}",
+                                  const SizedBox(height: 4),
 
-                        style:
-                        const TextStyle(
-                          fontWeight:
-                          FontWeight
-                              .bold,
+                                  Text(
+                                    "₹${item.price}",
+                                    style: const TextStyle(
+                                      color: Colors.green,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            IconButton(
+                              icon: const Icon(
+                                Icons.remove_circle_outline,
+                                color: Colors.orange,
+                              ),
+                              onPressed: () {
+                                cart.decrementQuantity(item.id);
+                              },
+                            ),
+
+                            Text(
+                              "${item.quantity}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+
+                            IconButton(
+                              icon: const Icon(
+                                Icons.add_circle_outline,
+                                color: Colors.green,
+                              ),
+                              onPressed: () {
+                                cart.addToCart(
+                                  item.id,
+                                  item.name,
+                                  item.price,
+                                  item.restaurantId,
+                                  item.restaurantName,
+                                );
+                              },
+                            ),
+
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.red,
+                              ),
+                              onPressed: () {
+
+                                while (
+                                cart.items.containsKey(item.id)
+                                ) {
+                                  cart.decrementQuantity(
+                                    item.id,
+                                  );
+                                }
+                              },
+                            ),
+                          ],
                         ),
                       ),
                     );
