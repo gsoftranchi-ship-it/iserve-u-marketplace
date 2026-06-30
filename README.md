@@ -1,92 +1,133 @@
-<h1 align="center">Hi 👋, I'm Kumar Gaurav</h1>
+# 🚀 iServe-U Marketplace
 
-<h3 align="center">
-Flutter Developer • Firebase • AI Data Annotation • Virtual Assistant
-</h3>
+<p align="center">
+  <img src="assets/screenshots/banner.png" width="100%" alt="iServe-U Marketplace Banner"/>
+</p>
 
----
-
-## 👨‍💻 About Me
-
-- 🔭 Currently building **iServe-U Marketplace**
-- 🌱 Learning **Advanced Flutter & Firebase**
-- 💼 Looking for **Remote Flutter Developer, AI Evaluator & Data Annotation Opportunities**
-- 💬 Ask me about **Flutter, Firebase, Provider, Dart**
-- 📍 Pune, Maharashtra, India.
+A Flutter Marketplace, Food Delivery & Restaurant Management Platform powered by Firebase.
 
 ---
 
-## 🚀 Featured Project
+## 📱 Project Overview
 
-### ⭐ iServe-U Marketplace
+iServe-U Marketplace is a cross-platform Flutter application built with Flutter and Firebase.
 
-A complete Flutter Marketplace & Food Delivery Application.
+### Core Modules
 
-### Features
+- Food Ordering
+- Marketplace
+- Weekly & Monthly Tiffin
+- Restaurant Dashboard
+- Admin Dashboard
+- Partner Module
+- Push Notifications
 
-- 🍔 Food Ordering
-- 🛒 Marketplace
-- 🥗 Weekly & Monthly Tiffin
-- 🏪 Restaurant Dashboard
-- 👨‍💼 Admin Panel
-- 🔔 Push Notifications
-- ☁ Firebase Backend
-- 💳 Payment Integration
+---
 
-Repository:
+## ✨ Features
 
-👉 https://github.com/gsoftranchi-ship-it/iserve-u-marketplace
+### Customer
+- Food Ordering
+- Marketplace Shopping
+- Cart
+- Delivery Address
+- Notifications
+
+### Restaurant
+- Dashboard
+- Menu Management
+- Product Upload
+- Orders
+
+### Admin
+- Restaurant Approval
+- Order Monitoring
+- Sales Reports
 
 ---
 
 ## 🛠 Tech Stack
 
-### Mobile
-
-- Flutter
-- Dart
-
-### Backend
-
-- Firebase Authentication
-- Cloud Firestore
-- Firebase Storage
-- Firebase Cloud Messaging
-
-### State Management
-
-- Provider
-
-### Tools
-
-- Git
-- GitHub
-- VS Code
-- Android Studio
+| Technology | Purpose |
+|------------|---------|
+| Flutter | Cross-platform |
+| Dart | Programming |
+| Firebase Authentication | Login |
+| Cloud Firestore | Database |
+| Firebase Storage | Images |
+| Firebase Cloud Messaging | Notifications |
+| Provider | State Management |
 
 ---
 
-## 🌐 Connect with me
+## 📱 Screenshots
 
-- LinkedIn:
-  https://www.linkedin.com/in/kumar-gaurav-b12749389/
+Place screenshots inside `assets/screenshots/`.
 
-- GitHub:
-  https://github.com/gsoftranchi-ship-it
-
----
-
-## 🎯 Career Goal
-
-I am looking for opportunities in:
-
-- Flutter Development
-- Firebase Development
-- AI Evaluation
-- Data Annotation
-- Virtual Assistant
-- Remote Software Development
+- home_page.png
+- food_page.png
+- cart_page.png
+- login_page.png
+- restaurant_dashboard_page.png
+- admin_sales_report.png
 
 ---
 
-⭐ Thank you for visiting my profile!
+## 🏗️ Project Structure
+
+```text
+lib/
+├── core/
+├── data/
+├── features/
+├── players/
+├── screens/
+├── shared_widgets/
+└── main.dart
+```
+
+---
+
+## ☁️ Firebase
+
+- Authentication
+- Firestore
+- Storage
+- Cloud Messaging
+
+---
+
+## 🚀 Installation
+
+```bash
+git clone https://github.com/gsoftranchi-ship-it/iserve-u-marketplace.git
+cd iserve-u-marketplace
+flutter pub get
+flutter run
+```
+
+---
+
+## 🔮 Future Roadmap
+
+- Live Order Tracking
+- Coupons
+- Wallet
+- Reviews
+- Multi-language Support
+
+---
+
+## 👨‍💻 Developer
+
+**Kumar Gaurav**
+
+GitHub: https://github.com/gsoftranchi-ship-it
+
+LinkedIn: https://www.linkedin.com/in/kumar-gaurav-b12749389/
+
+Email: gsoftranchi@gmail.com
+
+---
+
+⭐ If you found this project useful, please give it a star.
