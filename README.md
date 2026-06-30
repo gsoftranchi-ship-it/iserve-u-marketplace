@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/screenshots/banner.png" width="100%" alt="iServe-U Marketplace Banner"/>
+  <img src="assets/screenshots/Banner.png" width="100%" alt="iServe-U Marketplace Banner"/>
 </p>
 # 🚀 iServe-U Marketplace
 
