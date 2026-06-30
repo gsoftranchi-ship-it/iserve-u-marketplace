@@ -3,6 +3,14 @@
 <p align="center">
   <img src="assets/screenshots/banner.png" width="100%" alt="iServe-U Marketplace Banner"/>
 </p>
+<p align="center">
+
+![Flutter](https://img.shields.io/badge/Flutter-3.x-blue?logo=flutter)
+![Firebase](https://img.shields.io/badge/Firebase-Backend-orange?logo=firebase)
+![Platform](https://img.shields.io/badge/Platform-Android%20|%20Web%20|%20Windows-success)
+![License](https://img.shields.io/badge/License-MIT-green)
+
+</p>
 
 A Flutter Marketplace, Food Delivery & Restaurant Management Platform powered by Firebase.
 
@@ -60,40 +68,125 @@ iServe-U Marketplace is a cross-platform Flutter application built with Flutter 
 
 ---
 
-## 📱 Screenshots
+# 📱 Application Screenshots
 
-Place screenshots inside `assets/screenshots/`.
+## 🔐 Authentication
 
-- home_page.png
-- food_page.png
-- cart_page.png
-- login_page.png
-- restaurant_dashboard_page.png
-- admin_sales_report.png
+| Login Screen | Location Selection |
+|--------------|--------------------|
+| ![](assets/screenshots/login_page.png) | ![](assets/screenshots/location_page.png) |
 
 ---
 
-## 🏗️ Project Structure
+## 🏠 Customer Application
+
+| Home | Food |
+|------|------|
+| ![](assets/screenshots/home_page.png) | ![](assets/screenshots/food_page.png) |
+
+| Home (Alternative View) | Cart |
+|-------------------------|------|
+| ![](assets/screenshots/home_page2.png) | ![](assets/screenshots/cart_page.png) |
+
+---
+
+## 🛍 Marketplace & Orders
+
+| Orders | Notifications |
+|--------|---------------|
+| ![](assets/screenshots/order_page.png) | ![](assets/screenshots/notification_page.png) |
+
+---
+
+## 🍽 Restaurant Dashboard
+
+| Dashboard | Add Product |
+|-----------|-------------|
+| ![](assets/screenshots/restaurant_dashboard_page.png) | ![](assets/screenshots/add_product_page.png) |
+
+---
+
+## 👨‍💼 Admin Dashboard
+
+| Sales Report | Order Assignment |
+|-------------|------------------|
+| ![](assets/screenshots/admin_sales_report.png) | ![](assets/screenshots/order_assigning_page.png) |
+
+---
+---
+
+
+i# 🏗️ System Modules
 
 ```text
-lib/
-├── core/
-├── data/
-├── features/
-├── players/
-├── screens/
-├── shared_widgets/
+
+iServe-U Platform
+│
+├── 🔐 Authentication
+├── 🛒 Marketplace
+├── 🍔 Food Ordering
+├── 📦 Weekly & Monthly Tiffin
+├── 🍽 Restaurant Dashboard
+├── 🤝 Partner Module
+├── 👨‍💼 Admin Dashboard
+├── 🔔 Notifications
+├── 📢 Advertisement System
+├── 👤 Customer Profile
+├── 🛠 Support Center
+└── 📊 Analytics
+```
+# 📂 Project Structure
+
+```text
+
+lib
+│
+├── core
+│   ├── cache
+│   ├── models
+│   ├── services
+│   ├── utils
+│   └── widgets
+│
+├── data
+│
+├── features
+│   ├── food
+│   ├── notifications
+│   ├── partner
+│   ├── profile
+│   ├── restaurant
+│   └── support
+│
+├── players
+│   ├── android_player
+│   ├── web_player
+│   └── shared
+│
+├── screens
+│   ├── admin
+│   ├── auth
+│   ├── food_dining
+│   ├── marketplace
+│   ├── home
+│   ├── profile
+│   └── placeholders
+│
+├── shared_widgets
+│
+├── firebase_options.dart
 └── main.dart
 ```
 
----
 
 ## ☁️ Firebase
 
-- Authentication
-- Firestore
-- Storage
-- Cloud Messaging
+- Firebase Authentication
+- Cloud Firestore
+- Firebase Storage
+- Firebase Cloud Messaging
+- Firebase Hosting (Web)
+- Firebase Analytics Ready
 
 ---
 
@@ -106,15 +199,73 @@ flutter pub get
 flutter run
 ```
 
+## 📊 Project Statistics
+
+- ✅ 50+ Flutter Screens
+- ✅ 25+ Firebase Collections
+- ✅ Customer Application
+- ✅ Restaurant Panel
+- ✅ Admin Dashboard
+- ✅ Partner Module
+- ✅ Advertisement System
+- ✅ Push Notifications
+- ✅ Cross Platform Support
+
 ---
+## 📱 Supported Platforms
+
+✅ Android
+
+✅ Web
+
+✅ Windows
+
+🚧 iOS (Coming Soon)
+
+
+---
+##  Architecture
+Flutter App
+
+↓
+
+Firebase Authentication
+
+↓
+
+Cloud Firestore
+
+↓
+
+Firebase Storage
+
+↓
+
+Firebase Cloud Messaging
 
 ## 🔮 Future Roadmap
 
 - Live Order Tracking
-- Coupons
-- Wallet
-- Reviews
-- Multi-language Support
+
+- Wallet Integration
+
+- Coupons & Offers
+
+- Customer Ratings
+
+- Multi-language
+
+- Business Analytics
+
+- AI Recommendation Engine
+
+- Dark Theme
+
+---
+
+## License
+
+MIT License
 
 ---
 
